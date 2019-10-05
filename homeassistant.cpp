@@ -3,7 +3,7 @@
 #include <QJsonArray>
 
 #include "homeassistant.h"
-#include "../../entities/entity.h"
+#include "../remote-software/sources/entities/entity.h"
 #include "math.h"
 
 void HomeAssistant::initialize(int integrationId, const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api, QObject* configObj)

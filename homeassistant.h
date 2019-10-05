@@ -9,8 +9,8 @@
 #include <QTimer>
 #include <QThread>
 
-#include "../integration.h"
-#include "../integrationinterface.h"
+#include "../remote-software/sources/integrations/integration.h"
+#include "../remote-software/sources/integrations/integrationinterface.h"
 
 class HomeAssistant : public Integration, IntegrationInterface
 {

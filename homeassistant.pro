@@ -2,11 +2,11 @@ TEMPLATE        = lib
 CONFIG         += plugin
 QT             += websockets core quick
 HEADERS         = homeassistant.h \
-                  ../integration.h \
-                  ../integrationinterface.h
+                  ../remote-software/sources/integrations/integration.h \
+                  ../remote-software/sources/integrations/integrationinterface.h
 SOURCES         = homeassistant.cpp
 TARGET          = homeassistant
-DESTDIR         = ../../../plugins
+DESTDIR         = ../remote-software/plugins
 
 #DISTFILES += homeassistant.json
 
