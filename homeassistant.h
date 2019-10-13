@@ -12,7 +12,10 @@
 #include "../remote-software/sources/integrations/integration.h"
 #include "../remote-software/sources/integrations/integrationinterface.h"
 
-class HomeAssistant : public Integration, IntegrationInterface
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// HOME ASSISTANT FACTORY
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class HomeAssistant : public QObject, IntegrationInterface
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "YIO.IntegrationInterface" FILE "homeassistant.json")
@@ -21,9 +24,24 @@ class HomeAssistant : public Integration, IntegrationInterface
 public:
     explicit HomeAssistant() {}
 
-    Q_INVOKABLE void initialize	    (int integrationId, const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj) override;
-    Q_INVOKABLE void connect	    () override;
-    Q_INVOKABLE void disconnect	    () override;
+    QMap<QObject *, QVariant> create          (const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj) override;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// HOME ASSISTANT BASE CLASS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class HomeAssistantBase : public Integration
+{
+    Q_OBJECT
+
+public:
+    explicit HomeAssistantBase() {}
+
+    Q_INVOKABLE void setup  	    (const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj);
+    Q_INVOKABLE void connect	    ();
+    Q_INVOKABLE void disconnect	    ();
 
 signals:
     void connectSignal              ();
@@ -32,15 +50,19 @@ signals:
 
 
 public slots:
-    void sendCommand                (const QString& type, const QString& entity_id, const QString& command, const QVariant& param) override;
+    void sendCommand                (const QString& type, const QString& entity_id, const QString& command, const QVariant& param);
     void stateHandler               (int state);
 
 private:
-    void updateEntity               (const QString& entity_id, const QVariantMap& attr) override {}
+    void updateEntity               (const QString& entity_id, const QVariantMap& attr) {}
 
     QThread                         m_thread;
 };
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// HOME ASSISTANT THREAD CLASS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class HomeAssistantThread : public QObject
 {
