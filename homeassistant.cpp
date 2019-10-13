@@ -4,17 +4,37 @@
 
 #include "homeassistant.h"
 #include "../remote-software/sources/entities/entity.h"
+#include "../remote-software/sources/integrations/integrations.h"
 #include "math.h"
 
-void HomeAssistant::initialize(int integrationId, const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api, QObject* configObj)
+void HomeAssistant::initialize(const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj, QObject *integrations)
 {
-    setIntegrationId(integrationId);
+    QVariantList data;
+    QString mdns;
 
     for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
-        if (iter.key() == "type")
-            setType(iter.value().toString());
-        else if (iter.key() == "friendly_name")
+        if (iter.key() == "mdns") {
+            mdns = iter.value().toString();
+        } else if (iter.key() == "data") {
+            data = iter.value().toList();
+        }
+    }
+
+    for (int i=0; i<data.length(); i++)
+    {
+        HomeAssistantBase* ha = new HomeAssistantBase();
+        ha->setup(data[i].toMap(), entities, notifications, api, configObj);
+        ha->connect();
+    }
+}
+
+void HomeAssistantBase::setup(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api, QObject* configObj)
+{
+    for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
+        if (iter.key() == "friendly_name")
             setFriendlyName(iter.value().toString());
+        else if (iter.key() == "id")
+            setIntegrationId(iter.value().toString());
     }
 
     // crate a new instance and pass on variables
@@ -26,31 +46,33 @@ void HomeAssistant::initialize(int integrationId, const QVariantMap& config, QOb
     // connect signals and slots
     QObject::connect(&m_thread, &QThread::finished, HAThread, &QObject::deleteLater);
 
-    QObject::connect(this, &HomeAssistant::connectSignal, HAThread, &HomeAssistantThread::connect);
-    QObject::connect(this, &HomeAssistant::disconnectSignal, HAThread, &HomeAssistantThread::disconnect);
-    QObject::connect(this, &HomeAssistant::sendCommandSignal, HAThread, &HomeAssistantThread::sendCommand);
+    QObject::connect(this, &HomeAssistantBase::connectSignal, HAThread, &HomeAssistantThread::connect);
+    QObject::connect(this, &HomeAssistantBase::disconnectSignal, HAThread, &HomeAssistantThread::disconnect);
+    QObject::connect(this, &HomeAssistantBase::sendCommandSignal, HAThread, &HomeAssistantThread::sendCommand);
 
-    QObject::connect(HAThread, &HomeAssistantThread::stateChanged, this, &HomeAssistant::stateHandler);
+    QObject::connect(HAThread, &HomeAssistantThread::stateChanged, this, &HomeAssistantBase::stateHandler);
 
     m_thread.start();
+
+    qDebug() << "HA SETUP" << integrationId();
 }
 
-void HomeAssistant::connect()
+void HomeAssistantBase::connect()
 {
     emit connectSignal();
 }
 
-void HomeAssistant::disconnect()
+void HomeAssistantBase::disconnect()
 {
     emit disconnectSignal();
 }
 
-void HomeAssistant::sendCommand(const QString& type, const QString& entity_id, const QString& command, const QVariant& param)
+void HomeAssistantBase::sendCommand(const QString& type, const QString& entity_id, const QString& command, const QVariant& param)
 {
     emit sendCommandSignal(type, entity_id, command, param);
 }
 
-void HomeAssistant::stateHandler(int state)
+void HomeAssistantBase::stateHandler(int state)
 {
     if (state == 0) {
         setState(CONNECTED);
