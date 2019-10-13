@@ -24,7 +24,7 @@ class HomeAssistant : public QObject, IntegrationInterface
 public:
     explicit HomeAssistant() {}
 
-    void initialize                 (const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj, QObject *integrations) override;
+    QMap<QObject *, QVariant> create          (const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj) override;
 };
 
 

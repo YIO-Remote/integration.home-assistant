@@ -7,8 +7,10 @@
 #include "../remote-software/sources/integrations/integrations.h"
 #include "math.h"
 
-void HomeAssistant::initialize(const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj, QObject *integrations)
+QMap<QObject *, QVariant> HomeAssistant::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj)
 {
+    QMap<QObject *, QVariant> returnData;
+
     QVariantList data;
     QString mdns;
 
@@ -24,8 +26,13 @@ void HomeAssistant::initialize(const QVariantMap& config, QObject *entities, QOb
     {
         HomeAssistantBase* ha = new HomeAssistantBase();
         ha->setup(data[i].toMap(), entities, notifications, api, configObj);
-        ha->connect();
+
+        QVariantMap d = data[i].toMap();
+        d.insert("mdns", mdns);
+        returnData.insert(ha, d);
     }
+
+    return returnData;
 }
 
 void HomeAssistantBase::setup(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api, QObject* configObj)
@@ -53,8 +60,6 @@ void HomeAssistantBase::setup(const QVariantMap& config, QObject* entities, QObj
     QObject::connect(HAThread, &HomeAssistantThread::stateChanged, this, &HomeAssistantBase::stateHandler);
 
     m_thread.start();
-
-    qDebug() << "HA SETUP" << integrationId();
 }
 
 void HomeAssistantBase::connect()
