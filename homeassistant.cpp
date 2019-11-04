@@ -7,7 +7,7 @@
 #include "../remote-software/sources/integrations/integrations.h"
 #include "math.h"
 
-QMap<QObject *, QVariant> HomeAssistant::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj)
+void HomeAssistant::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj)
 {
     QMap<QObject *, QVariant> returnData;
 
@@ -32,7 +32,7 @@ QMap<QObject *, QVariant> HomeAssistant::create(const QVariantMap &config, QObje
         returnData.insert(ha, d);
     }
 
-    return returnData;
+    emit createDone(returnData);
 }
 
 void HomeAssistantBase::setup(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api, QObject* configObj)
@@ -99,6 +99,8 @@ HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *ent
             QVariantMap map = iter.value().toMap();
             m_ip = map.value("ip").toString();
             m_token = map.value("token").toString();
+        } else if (iter.key() == "id") {
+            m_id = iter.value().toString();
         }
     }
     m_entities = qobject_cast<EntitiesInterface *>(entities);
@@ -174,6 +176,7 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message)
     if (type == "result" && id == 3) {
         setState(0);
         qDebug() << "Subscribed to state changes";
+
         // remove notifications that we don't need anymore as the integration is connected
         //        m_notifications->remove("Cannot connect to Home Assistant.");
     }

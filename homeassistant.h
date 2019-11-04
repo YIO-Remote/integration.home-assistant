@@ -15,7 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// HOME ASSISTANT FACTORY
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class HomeAssistant : public QObject, IntegrationInterface
+class HomeAssistant : public IntegrationInterface
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "YIO.IntegrationInterface" FILE "homeassistant.json")
@@ -24,7 +24,7 @@ class HomeAssistant : public QObject, IntegrationInterface
 public:
     explicit HomeAssistant() {}
 
-    QMap<QObject *, QVariant> create          (const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj) override;
+    void create                     (const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj) override;
 };
 
 
@@ -102,6 +102,8 @@ private:
     NotificationsInterface*         m_notifications;
     YioAPIInterface*                m_api;
     ConfigInterface*                m_config;
+
+    QString                         m_id;
 
     QString                         m_ip;
     QString                         m_token;
