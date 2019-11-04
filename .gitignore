@@ -64,9 +64,7 @@ $RECYCLE.BIN/
 *.lnk
 
 ### Project specific ###
-build*
 software/build-*
-software/remote/translations/.DS_Store
 
 # plugins
 plugins/*.so
