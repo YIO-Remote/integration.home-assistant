@@ -29,6 +29,7 @@ void HomeAssistant::create(const QVariantMap &config, QObject *entities, QObject
 
         QVariantMap d = data[i].toMap();
         d.insert("mdns", mdns);
+        d.insert("type", config.value("type").toString());
         returnData.insert(ha, d);
     }
 
