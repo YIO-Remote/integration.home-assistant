@@ -37,7 +37,7 @@ class HomeAssistantBase : public Integration
     Q_OBJECT
 
 public:
-    explicit HomeAssistantBase() {}
+    explicit HomeAssistantBase(QObject *parent);
 
     Q_INVOKABLE void setup  	    (const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj);
     Q_INVOKABLE void connect	    ();

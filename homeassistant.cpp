@@ -24,7 +24,7 @@ void HomeAssistant::create(const QVariantMap &config, QObject *entities, QObject
 
     for (int i=0; i<data.length(); i++)
     {
-        HomeAssistantBase* ha = new HomeAssistantBase();
+        HomeAssistantBase* ha = new HomeAssistantBase(this);
         ha->setup(data[i].toMap(), entities, notifications, api, configObj);
 
         QVariantMap d = data[i].toMap();
@@ -34,6 +34,11 @@ void HomeAssistant::create(const QVariantMap &config, QObject *entities, QObject
     }
 
     emit createDone(returnData);
+}
+
+HomeAssistantBase::HomeAssistantBase(QObject *parent)
+{
+    this->setParent(parent);
 }
 
 void HomeAssistantBase::setup(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api, QObject* configObj)
