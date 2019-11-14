@@ -4,7 +4,7 @@ QT             += websockets core quick
 
 REMOTE_SRC = $$(YIO_SRC)
 isEmpty(REMOTE_SRC) {
-    REMOTE_SRC = $$PWD/../remote-software
+    REMOTE_SRC = $$clean_path($$PWD/../remote-software)
     warning("Environment variables YIO_SR not defined! Using '$$REMOTE_SRC' for remote-software project.")
 } else {
     REMOTE_SRC = $$(YIO_SRC)/remote-software
