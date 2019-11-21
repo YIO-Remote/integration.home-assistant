@@ -269,7 +269,7 @@ int HomeAssistantThread::convertBrightnessToPercentage(float value)
 
 void HomeAssistantThread::updateEntity(const QString& entity_id, const QVariantMap& attr)
 {
-    Entity* entity = (Entity*)m_entities->get(entity_id);
+    EntityInterface* entity = m_entities->getEntityInterface(entity_id);
     if (entity) {
         if (entity->type() == "light") {
             updateLight(entity, attr);
@@ -283,7 +283,7 @@ void HomeAssistantThread::updateEntity(const QString& entity_id, const QVariantM
     }
 }
 
-void HomeAssistantThread::updateLight(Entity* entity, const QVariantMap& attr)
+void HomeAssistantThread::updateLight(EntityInterface* entity, const QVariantMap& attr)
 {
     QVariantMap attributes;
 
@@ -320,7 +320,7 @@ void HomeAssistantThread::updateLight(Entity* entity, const QVariantMap& attr)
     m_entities->update(entity->entity_id(), attributes);
 }
 
-void HomeAssistantThread::updateBlind(Entity *entity, const QVariantMap &attr)
+void HomeAssistantThread::updateBlind(EntityInterface *entity, const QVariantMap &attr)
 {
     QVariantMap attributes;
 
@@ -339,7 +339,7 @@ void HomeAssistantThread::updateBlind(Entity *entity, const QVariantMap &attr)
     m_entities->update(entity->entity_id(), attributes);
 }
 
-void HomeAssistantThread::updateMediaPlayer(Entity *entity, const QVariantMap &attr)
+void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVariantMap &attr)
 {
     QVariantMap attributes;
 

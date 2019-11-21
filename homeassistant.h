@@ -11,6 +11,11 @@
 
 #include "../remote-software/sources/integrations/integration.h"
 #include "../remote-software/sources/integrations/integrationinterface.h"
+#include "../remote-software/sources/entities/entitiesinterface.h"
+#include "../remote-software/sources/entities/entityinterface.h"
+#include "../remote-software/sources/notificationsinterface.h"
+#include "../remote-software/sources/yioapiinterface.h"
+#include "../remote-software/sources/configinterface.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// HOME ASSISTANT FACTORY
@@ -92,9 +97,9 @@ private:
     int  convertBrightnessToPercentage (float value);
 
     void updateEntity               (const QString& entity_id, const QVariantMap& attr);
-    void updateLight                (Entity* entity, const QVariantMap& attr);
-    void updateBlind                (Entity* entity, const QVariantMap& attr);
-    void updateMediaPlayer          (Entity* entity, const QVariantMap& attr);
+    void updateLight                (EntityInterface* entity, const QVariantMap& attr);
+    void updateBlind                (EntityInterface* entity, const QVariantMap& attr);
+    void updateMediaPlayer          (EntityInterface* entity, const QVariantMap& attr);
 
     void setState                   (int state);
 
