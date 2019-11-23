@@ -39,6 +39,14 @@ HomeAssistantBase::HomeAssistantBase(QObject *parent)
     this->setParent(parent);
 }
 
+HomeAssistantBase::~HomeAssistantBase()
+{
+    if (m_thread.isRunning()) {
+        m_thread.exit();
+        m_thread.wait(5000);
+    }
+}
+
 void HomeAssistantBase::setup(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api, QObject* configObj)
 {
     for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
@@ -245,7 +253,7 @@ void HomeAssistantThread::webSocketSendCommand(const QString& domain, const QStr
     map.insert("domain", QVariant(domain));
     map.insert("service", QVariant(service));
 
-    if (data == NULL) {
+    if (data == nullptr) {
         QVariantMap d;
         d.insert("entity_id", QVariant(entity_id));
         map.insert("service_data", d);
@@ -426,11 +434,11 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
 {
     if (type == "light") {
         if (command == "TOGGLE")
-            webSocketSendCommand(type, "toggle", entity_id, NULL);
+            webSocketSendCommand(type, "toggle", entity_id, nullptr);
         else if (command == "ON")
-            webSocketSendCommand(type, "turn_on", entity_id, NULL);
+            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
         else if (command == "OFF")
-            webSocketSendCommand(type, "turn_off", entity_id, NULL);
+            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
         else if (command == "BRIGHTNESS") {
             QVariantMap data;
             data.insert("brightness_pct", param);
@@ -449,11 +457,11 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
     }
     if (type == "blind") {
         if (command == "OPEN")
-            webSocketSendCommand("cover", "open_cover", entity_id, NULL);
+            webSocketSendCommand("cover", "open_cover", entity_id, nullptr);
         else if (command == "CLOSE")
-            webSocketSendCommand("cover", "close_cover", entity_id, NULL);
+            webSocketSendCommand("cover", "close_cover", entity_id, nullptr);
         else if (command == "STOP")
-            webSocketSendCommand("cover", "stop_cover", entity_id, NULL);
+            webSocketSendCommand("cover", "stop_cover", entity_id, nullptr);
         else if (command == "POSITION") {
             QVariantMap data;
             data.insert("position", param);
@@ -469,12 +477,12 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
         else if (command == "PLAY" || command == "PAUSE")
             webSocketSendCommand(type, "media_play_pause", entity_id, NULL);
         else if (command == "PREVIOUS")
-            webSocketSendCommand(type, "media_previous_track", entity_id, NULL);
+            webSocketSendCommand(type, "media_previous_track", entity_id, nullptr);
         else if (command == "NEXT")
-            webSocketSendCommand(type, "media_next_track", entity_id, NULL);
+            webSocketSendCommand(type, "media_next_track", entity_id, nullptr);
         else if (command == "TURNON")
-            webSocketSendCommand(type, "turn_on", entity_id, NULL);
+            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
         else if (command == "TURNOFF")
-            webSocketSendCommand(type, "turn_off", entity_id, NULL);
+            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
     }
 }
