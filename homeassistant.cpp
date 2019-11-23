@@ -3,8 +3,6 @@
 #include <QJsonArray>
 
 #include "homeassistant.h"
-#include "../remote-software/sources/entities/entity.h"
-#include "../remote-software/sources/integrations/integrations.h"
 #include "math.h"
 
 void HomeAssistant::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj)
@@ -363,7 +361,7 @@ void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVari
 
     // volume
     if (entity->supported_features().indexOf("VOLUME") > -1 && attr.value("attributes").toMap().contains("volume_level")) {
-        attributes.insert("volume", attr.value("attributes").toMap().value("volume_level").toDouble());
+        attributes.insert("volume", int(round(attr.value("attributes").toMap().value("volume_level").toDouble()*100)));
     }
 
     // media type
@@ -465,10 +463,10 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
     if (type == "media_player") {
         if (command == "VOLUME_SET") {
             QVariantMap data;
-            data.insert("volume_level", param);
+            data.insert("volume_level", param.toDouble()/100);
             webSocketSendCommand(type, "volume_set", entity_id, &data);
         }
-        else if (command == "PLAY")
+        else if (command == "PLAY" || command == "PAUSE")
             webSocketSendCommand(type, "media_play_pause", entity_id, NULL);
         else if (command == "PREVIOUS")
             webSocketSendCommand(type, "media_previous_track", entity_id, NULL);
