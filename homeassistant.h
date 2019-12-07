@@ -8,9 +8,10 @@
 #include <QtWebSockets/QWebSocket>
 #include <QTimer>
 #include <QThread>
+#include <QLoggingCategory>
 
 #include "../remote-software/sources/integrations/integration.h"
-#include "../remote-software/sources/integrations/integrationinterface.h"
+#include "../remote-software/sources/integrations/plugininterface.h"
 #include "../remote-software/sources/entities/entitiesinterface.h"
 #include "../remote-software/sources/entities/entityinterface.h"
 #include "../remote-software/sources/notificationsinterface.h"
@@ -20,16 +21,24 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// HOME ASSISTANT FACTORY
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class HomeAssistant : public IntegrationInterface
+class HomeAssistant : public PluginInterface
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "YIO.IntegrationInterface" FILE "homeassistant.json")
-    Q_INTERFACES(IntegrationInterface)
+    Q_INTERFACES(PluginInterface)
 
 public:
-    explicit HomeAssistant() {}
+    explicit HomeAssistant() :
+        m_log("homeassistant")
+    {}
 
     void create                     (const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj) override;
+    void setLogEnabled              (QtMsgType msgType, bool enable) override
+    {
+        m_log.setEnabled(msgType, enable);
+    }
+private:
+    QLoggingCategory    m_log;
 };
 
 
@@ -42,12 +51,13 @@ class HomeAssistantBase : public Integration
     Q_OBJECT
 
 public:
-    explicit HomeAssistantBase(QObject *parent);
+    explicit HomeAssistantBase(QLoggingCategory& log, QObject *parent);
     virtual ~HomeAssistantBase();
 
     Q_INVOKABLE void setup  	    (const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj);
     Q_INVOKABLE void connect	    ();
     Q_INVOKABLE void disconnect	    ();
+    Q_INVOKABLE void sendCommand    (const QString& type, const QString& entity_id, const QString& command, const QVariant& param);
 
 signals:
     void connectSignal              ();
@@ -56,13 +66,13 @@ signals:
 
 
 public slots:
-    void sendCommand                (const QString& type, const QString& entity_id, const QString& command, const QVariant& param);
     void stateHandler               (int state);
 
 private:
-    void updateEntity               (const QString& entity_id, const QVariantMap& attr) {}
+    //void updateEntity               (const QString& entity_id, const QVariantMap& attr) {}
 
     QThread                         m_thread;
+    QLoggingCategory&               m_log;
 };
 
 
@@ -75,7 +85,8 @@ class HomeAssistantThread : public QObject
     Q_OBJECT
 
 public:
-    HomeAssistantThread             (const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj);
+    HomeAssistantThread             (const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj,
+                                     QLoggingCategory& log);
 
 signals:
     void stateChanged               (int state);
@@ -118,7 +129,7 @@ private:
     int                             m_tries;
     int                             m_webSocketId;
     bool                            m_userDisconnect = false;
-
+    QLoggingCategory&               m_log;
     int                             m_state = 0;
 
 };
