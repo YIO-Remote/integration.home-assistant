@@ -24,7 +24,7 @@
 class HomeAssistant : public PluginInterface
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "YIO.IntegrationInterface" FILE "homeassistant.json")
+    Q_PLUGIN_METADATA(IID "YIO.PluginInterface" FILE "homeassistant.json")
     Q_INTERFACES(PluginInterface)
 
 public:
