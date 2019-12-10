@@ -12,7 +12,7 @@
 IntegrationInterface::~IntegrationInterface()
 {}
 
-void HomeAssistant::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj)
+void HomeAssistantPlugin::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj)
 {
     QMap<QObject *, QVariant> returnData;
 
@@ -87,7 +87,7 @@ void HomeAssistantBase::disconnect()
     emit disconnectSignal();
 }
 
-void HomeAssistantBase::sendCommand(const QString& type, const QString& entity_id, const QString& command, const QVariant& param)
+void HomeAssistantBase::sendCommand(const QString& type, const QString& entity_id, int command, const QVariant& param)
 {
     emit sendCommandSignal(type, entity_id, command, param);
 }
@@ -305,7 +305,7 @@ void HomeAssistantThread::updateLight(EntityInterface* entity, const QVariantMap
 
     QVariantMap haAttr = attr.value("attributes").toMap();
     // brightness
-    if (entity->isSupported("BRIGHTNESS")) {
+    if (entity->isSupported(LightDef::F_BRIGHTNESS)) {
         if (haAttr.contains("brightness")) {
             entity->updateAttrByIndex(LightDef::BRIGHTNESS, convertBrightnessToPercentage(haAttr.value("brightness").toInt()));
         } else {
@@ -314,7 +314,7 @@ void HomeAssistantThread::updateLight(EntityInterface* entity, const QVariantMap
     }
 
     // color
-    if (entity->isSupported("COLOR")) {
+    if (entity->isSupported(LightDef::F_COLOR)) {
         QVariant color = haAttr.value("rgb_color");
         QVariantList cl(color.toList());
         char buffer[10];
@@ -323,7 +323,7 @@ void HomeAssistantThread::updateLight(EntityInterface* entity, const QVariantMap
     }
 
     // color temp
-    if (entity->isSupported("COLORTEMP")) {
+    if (entity->isSupported(LightDef::F_COLORTEMP)) {
     }
 }
 
@@ -340,7 +340,7 @@ void HomeAssistantThread::updateBlind(EntityInterface *entity, const QVariantMap
     }
 
     // position
-    if (entity->isSupported("POSITION")) {
+    if (entity->isSupported(BlindDef::F_POSITION)) {
         attributes.insert("position", attr.value("attributes").toMap().value("current_position").toInt());
     }
 
@@ -366,34 +366,34 @@ void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVari
 
     QVariantMap haAttr = attr.value("attributes").toMap();
     // source
-    if (entity->isSupported("SOURCE") && haAttr.contains("source")) {
+    if (entity->isSupported(MediaPlayerDef::F_SOURCE) && haAttr.contains("source")) {
         attributes.insert("source", haAttr.value("source").toString());
     }
 
     // volume
-    if (entity->isSupported("VOLUME") && haAttr.contains("volume_level")) {
+    if (entity->isSupported(MediaPlayerDef::F_VOLUME_SET) && haAttr.contains("volume_level")) {
         attributes.insert("volume", int(round(haAttr.value("volume_level").toDouble()*100)));
     }
 
     // media type
-    if (entity->isSupported("MEDIA_TYPE") && haAttr.contains("media_content_type")) {
+    if (entity->isSupported(MediaPlayerDef::F_MEDIA_TYPE) && haAttr.contains("media_content_type")) {
         attributes.insert("mediaType", haAttr.value("media_content_type").toString());
     }
 
     // media image
-    if (entity->isSupported("MEDIA_IMAGE") && haAttr.contains("entity_picture")) {
+    if (entity->isSupported(MediaPlayerDef::F_MEDIA_IMAGE) && haAttr.contains("entity_picture")) {
         QString url = haAttr.value("entity_picture").toString();
         QString fullUrl = QString("http://").append(m_ip).append(url);
         attributes.insert("mediaImage", fullUrl);
     }
 
     // media title
-    if (entity->isSupported("MEDIA_TITLE") && haAttr.contains("media_title")) {
+    if (entity->isSupported(MediaPlayerDef::F_MEDIA_TITLE) && haAttr.contains("media_title")) {
         attributes.insert("mediaTitle", haAttr.value("media_title").toString());
     }
 
     // media artist
-    if (entity->isSupported("MEDIA_ARTIST") && haAttr.contains("media_artist")) {
+    if (entity->isSupported(MediaPlayerDef::F_MEDIA_ARTIST) && haAttr.contains("media_artist")) {
         attributes.insert("mediaArtist", haAttr.value("media_artist").toString());
     }
 
@@ -433,21 +433,21 @@ void HomeAssistantThread::disconnect()
     setState(2);
 }
 
-void HomeAssistantThread::sendCommand(const QString &type, const QString &entity_id, const QString &command, const QVariant &param)
+void HomeAssistantThread::sendCommand(const QString &type, const QString &entity_id, int command, const QVariant &param)
 {
     if (type == "light") {
-        if (command == "TOGGLE")
+        if (command == LightDef::C_TOGGLE)
             webSocketSendCommand(type, "toggle", entity_id, nullptr);
-        else if (command == "ON")
+        else if (command == LightDef::C_ON)
             webSocketSendCommand(type, "turn_on", entity_id, nullptr);
-        else if (command == "OFF")
+        else if (command == LightDef::C_OFF)
             webSocketSendCommand(type, "turn_off", entity_id, nullptr);
-        else if (command == "BRIGHTNESS") {
+        else if (command == LightDef::C_BRIGHTNESS) {
             QVariantMap data;
             data.insert("brightness_pct", param);
             webSocketSendCommand(type, "turn_on", entity_id, &data);
         }
-        else if (command == "COLOR") {
+        else if (command == LightDef::C_COLOR) {
             QColor color = param.value<QColor>();
             QVariantMap data;
             QVariantList list;
@@ -459,33 +459,33 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
         }
     }
     if (type == "blind") {
-        if (command == "OPEN")
+        if (command == BlindDef::C_OPEN)
             webSocketSendCommand("cover", "open_cover", entity_id, nullptr);
-        else if (command == "CLOSE")
+        else if (command == BlindDef::C_CLOSE)
             webSocketSendCommand("cover", "close_cover", entity_id, nullptr);
-        else if (command == "STOP")
+        else if (command == BlindDef::C_STOP)
             webSocketSendCommand("cover", "stop_cover", entity_id, nullptr);
-        else if (command == "POSITION") {
+        else if (command == BlindDef::C_POSITION) {
             QVariantMap data;
             data.insert("position", param);
             webSocketSendCommand("cover", "set_cover_position", entity_id, &data);
         }
     }
     if (type == "media_player") {
-        if (command == "VOLUME_SET") {
+        if (command == MediaPlayerDef::C_VOLUME_SET) {
             QVariantMap data;
             data.insert("volume_level", param.toDouble()/100);
             webSocketSendCommand(type, "volume_set", entity_id, &data);
         }
-        else if (command == "PLAY" || command == "PAUSE")
+        else if (command == MediaPlayerDef::C_PLAY || command == MediaPlayerDef::C_PAUSE)
             webSocketSendCommand(type, "media_play_pause", entity_id, nullptr);
-        else if (command == "PREVIOUS")
+        else if (command == MediaPlayerDef::C_PREVIOUS)
             webSocketSendCommand(type, "media_previous_track", entity_id, nullptr);
-        else if (command == "NEXT")
+        else if (command == MediaPlayerDef::C_NEXT)
             webSocketSendCommand(type, "media_next_track", entity_id, nullptr);
-        else if (command == "TURNON")
+        else if (command == MediaPlayerDef::C_TURNON)
             webSocketSendCommand(type, "turn_on", entity_id, nullptr);
-        else if (command == "TURNOFF")
+        else if (command == MediaPlayerDef::C_TURNOFF)
             webSocketSendCommand(type, "turn_off", entity_id, nullptr);
     }
 }

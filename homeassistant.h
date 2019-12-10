@@ -21,14 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// HOME ASSISTANT FACTORY
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class HomeAssistant : public PluginInterface
+class HomeAssistantPlugin : public PluginInterface
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "YIO.PluginInterface" FILE "homeassistant.json")
     Q_INTERFACES(PluginInterface)
 
 public:
-    explicit HomeAssistant() :
+    explicit HomeAssistantPlugin() :
         m_log("homeassistant")
     {}
 
@@ -57,12 +57,12 @@ public:
     Q_INVOKABLE void setup  	    (const QVariantMap& config, QObject *entities, QObject *notifications, QObject* api, QObject *configObj);
     Q_INVOKABLE void connect	    ();
     Q_INVOKABLE void disconnect	    ();
-    Q_INVOKABLE void sendCommand    (const QString& type, const QString& entity_id, const QString& command, const QVariant& param);
+    Q_INVOKABLE void sendCommand    (const QString& type, const QString& entity_id, int command, const QVariant& param);
 
 signals:
     void connectSignal              ();
     void disconnectSignal           ();
-    void sendCommandSignal          (const QString& type, const QString& entity_id, const QString& command, const QVariant& param);
+    void sendCommandSignal          (const QString& type, const QString& entity_id, int command, const QVariant& param);
 
 
 public slots:
@@ -95,7 +95,7 @@ public slots:
     void connect                    ();
     void disconnect                 ();
 
-    void sendCommand                (const QString& type, const QString& entity_id, const QString& command, const QVariant& param);
+    void sendCommand                (const QString& type, const QString& entity_id, int command, const QVariant& param);
 
     void onTextMessageReceived	    (const QString &message);
     void onStateChanged             (QAbstractSocket::SocketState state);
