@@ -1,13 +1,34 @@
+/******************************************************************************
+ *
+ * Copyright (C) 2019 Marton Borzak <hello@martonborzak.com>
+ * Copyright (C) 2019 Christian Riedl <ric@rts.co.at>
+ *
+ * This file is part of the YIO-Remote software project.
+ *
+ * YIO-Remote software is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * YIO-Remote software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with YIO-Remote software. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *****************************************************************************/
+
 #include <QtDebug>
 #include <QJsonDocument>
 #include <QJsonArray>
 
 #include "homeassistant.h"
-#include "../remote-software/sources/entities/entity.h"
-#include "../remote-software/sources/integrations/integrations.h"
 #include "math.h"
 
-QMap<QObject *, QVariant> HomeAssistant::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj)
+void HomeAssistant::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj)
 {
     QMap<QObject *, QVariant> returnData;
 
@@ -24,15 +45,29 @@ QMap<QObject *, QVariant> HomeAssistant::create(const QVariantMap &config, QObje
 
     for (int i=0; i<data.length(); i++)
     {
-        HomeAssistantBase* ha = new HomeAssistantBase();
+        HomeAssistantBase* ha = new HomeAssistantBase(this);
         ha->setup(data[i].toMap(), entities, notifications, api, configObj);
 
         QVariantMap d = data[i].toMap();
         d.insert("mdns", mdns);
+        d.insert("type", config.value("type").toString());
         returnData.insert(ha, d);
     }
 
-    return returnData;
+    emit createDone(returnData);
+}
+
+HomeAssistantBase::HomeAssistantBase(QObject *parent)
+{
+    this->setParent(parent);
+}
+
+HomeAssistantBase::~HomeAssistantBase()
+{
+    if (m_thread.isRunning()) {
+        m_thread.exit();
+        m_thread.wait(5000);
+    }
 }
 
 void HomeAssistantBase::setup(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api, QObject* configObj)
@@ -99,6 +134,8 @@ HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *ent
             QVariantMap map = iter.value().toMap();
             m_ip = map.value("ip").toString();
             m_token = map.value("token").toString();
+        } else if (iter.key() == "id") {
+            m_id = iter.value().toString();
         }
     }
     m_entities = qobject_cast<EntitiesInterface *>(entities);
@@ -174,6 +211,7 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message)
     if (type == "result" && id == 3) {
         setState(0);
         qDebug() << "Subscribed to state changes";
+
         // remove notifications that we don't need anymore as the integration is connected
         //        m_notifications->remove("Cannot connect to Home Assistant.");
     }
@@ -238,7 +276,7 @@ void HomeAssistantThread::webSocketSendCommand(const QString& domain, const QStr
     map.insert("domain", QVariant(domain));
     map.insert("service", QVariant(service));
 
-    if (data == NULL) {
+    if (data == nullptr) {
         QVariantMap d;
         d.insert("entity_id", QVariant(entity_id));
         map.insert("service_data", d);
@@ -260,7 +298,7 @@ int HomeAssistantThread::convertBrightnessToPercentage(float value)
 
 void HomeAssistantThread::updateEntity(const QString& entity_id, const QVariantMap& attr)
 {
-    Entity* entity = (Entity*)m_entities->get(entity_id);
+    EntityInterface* entity = m_entities->getEntityInterface(entity_id);
     if (entity) {
         if (entity->type() == "light") {
             updateLight(entity, attr);
@@ -274,7 +312,7 @@ void HomeAssistantThread::updateEntity(const QString& entity_id, const QVariantM
     }
 }
 
-void HomeAssistantThread::updateLight(Entity* entity, const QVariantMap& attr)
+void HomeAssistantThread::updateLight(EntityInterface* entity, const QVariantMap& attr)
 {
     QVariantMap attributes;
 
@@ -311,7 +349,7 @@ void HomeAssistantThread::updateLight(Entity* entity, const QVariantMap& attr)
     m_entities->update(entity->entity_id(), attributes);
 }
 
-void HomeAssistantThread::updateBlind(Entity *entity, const QVariantMap &attr)
+void HomeAssistantThread::updateBlind(EntityInterface *entity, const QVariantMap &attr)
 {
     QVariantMap attributes;
 
@@ -330,7 +368,7 @@ void HomeAssistantThread::updateBlind(Entity *entity, const QVariantMap &attr)
     m_entities->update(entity->entity_id(), attributes);
 }
 
-void HomeAssistantThread::updateMediaPlayer(Entity *entity, const QVariantMap &attr)
+void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVariantMap &attr)
 {
     QVariantMap attributes;
 
@@ -354,7 +392,7 @@ void HomeAssistantThread::updateMediaPlayer(Entity *entity, const QVariantMap &a
 
     // volume
     if (entity->supported_features().indexOf("VOLUME") > -1 && attr.value("attributes").toMap().contains("volume_level")) {
-        attributes.insert("volume", attr.value("attributes").toMap().value("volume_level").toDouble());
+        attributes.insert("volume", int(round(attr.value("attributes").toMap().value("volume_level").toDouble()*100)));
     }
 
     // media type
@@ -419,11 +457,11 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
 {
     if (type == "light") {
         if (command == "TOGGLE")
-            webSocketSendCommand(type, "toggle", entity_id, NULL);
+            webSocketSendCommand(type, "toggle", entity_id, nullptr);
         else if (command == "ON")
-            webSocketSendCommand(type, "turn_on", entity_id, NULL);
+            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
         else if (command == "OFF")
-            webSocketSendCommand(type, "turn_off", entity_id, NULL);
+            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
         else if (command == "BRIGHTNESS") {
             QVariantMap data;
             data.insert("brightness_pct", param);
@@ -442,11 +480,11 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
     }
     if (type == "blind") {
         if (command == "OPEN")
-            webSocketSendCommand("cover", "open_cover", entity_id, NULL);
+            webSocketSendCommand("cover", "open_cover", entity_id, nullptr);
         else if (command == "CLOSE")
-            webSocketSendCommand("cover", "close_cover", entity_id, NULL);
+            webSocketSendCommand("cover", "close_cover", entity_id, nullptr);
         else if (command == "STOP")
-            webSocketSendCommand("cover", "stop_cover", entity_id, NULL);
+            webSocketSendCommand("cover", "stop_cover", entity_id, nullptr);
         else if (command == "POSITION") {
             QVariantMap data;
             data.insert("position", param);
@@ -456,18 +494,18 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
     if (type == "media_player") {
         if (command == "VOLUME_SET") {
             QVariantMap data;
-            data.insert("volume_level", param);
+            data.insert("volume_level", param.toDouble()/100);
             webSocketSendCommand(type, "volume_set", entity_id, &data);
         }
-        else if (command == "PLAY")
+        else if (command == "PLAY" || command == "PAUSE")
             webSocketSendCommand(type, "media_play_pause", entity_id, NULL);
         else if (command == "PREVIOUS")
-            webSocketSendCommand(type, "media_previous_track", entity_id, NULL);
+            webSocketSendCommand(type, "media_previous_track", entity_id, nullptr);
         else if (command == "NEXT")
-            webSocketSendCommand(type, "media_next_track", entity_id, NULL);
+            webSocketSendCommand(type, "media_next_track", entity_id, nullptr);
         else if (command == "TURNON")
-            webSocketSendCommand(type, "turn_on", entity_id, NULL);
+            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
         else if (command == "TURNOFF")
-            webSocketSendCommand(type, "turn_off", entity_id, NULL);
+            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
     }
 }
