@@ -406,7 +406,12 @@ void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVari
     // media image
     if (entity->isSupported(MediaPlayerDef::F_MEDIA_IMAGE) && haAttr.contains("entity_picture")) {
         QString url = haAttr.value("entity_picture").toString();
-        QString fullUrl = QString("http://").append(m_ip).append(url);
+        QString fullUrl = "";
+        if (url.contains("http")) {
+            fullUrl = url;
+        } else {
+            fullUrl = QString("http://").append(m_ip).append(url);
+        }
         attributes.insert("mediaImage", fullUrl);
     }
 
