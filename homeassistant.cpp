@@ -218,7 +218,7 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message)
         qCDebug(m_log) << "Subscribed to state changes";
 
         // remove notifications that we don't need anymore as the integration is connected
-        //        m_notifications->remove("Cannot connect to Home Assistant.");
+        m_notifications->remove("Cannot connect to Home Assistant.");
     }
 
     if (id == m_webSocketId) {
@@ -253,7 +253,12 @@ void HomeAssistantThread::onTimeout()
     if (m_tries == 3) {
         m_websocketReconnect->stop();
 
-        m_notifications->add(true,tr("Cannot connect to Home Assistant."), tr("Reconnect"), "homeassistant");
+        QObject* param = this;
+        m_notifications->add(true, tr("Cannot connect to Home Assistant."), tr("Reconnect"), [](QObject* param){
+            Integration* i = qobject_cast<Integration *>(param);
+            i->connect();
+        }, param);
+
         disconnect();
         m_tries = 0;
     }
