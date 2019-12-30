@@ -1,46 +1,46 @@
 /******************************************************************************
-  *
-  * Copyright (C) 2019 Marton Borzak <hello@martonborzak.com>
-  * Copyright (C) 2019 Christian Riedl <ric@rts.co.at>
-  *
-  * This file is part of the YIO-Remote software project.
-  *
-  * YIO-Remote software is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * YIO-Remote software is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with YIO-Remote software. If not, see <https://www.gnu.org/licenses/>.
-  *
-  * SPDX-License-Identifier: GPL-3.0-or-later
-  *****************************************************************************/
-
-#include <QtDebug>
-#include <QJsonDocument>
-#include <QJsonArray>
+ *
+ * Copyright (C) 2019 Marton Borzak <hello@martonborzak.com>
+ * Copyright (C) 2019 Christian Riedl <ric@rts.co.at>
+ *
+ * This file is part of the YIO-Remote software project.
+ *
+ * YIO-Remote software is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * YIO-Remote software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with YIO-Remote software. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *****************************************************************************/
 
 #include "homeassistant.h"
-#include "math.h"
-#include "../remote-software/sources/entities/lightinterface.h"
+
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QtDebug>
+
 #include "../remote-software/sources/entities/blindinterface.h"
+#include "../remote-software/sources/entities/climateinterface.h"
+#include "../remote-software/sources/entities/lightinterface.h"
 #include "../remote-software/sources/entities/mediaplayerinterface.h"
+#include "math.h"
 
+IntegrationInterface::~IntegrationInterface() {}
 
-IntegrationInterface::~IntegrationInterface()
-{}
-
-void HomeAssistantPlugin::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj)
-{
+void HomeAssistantPlugin::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api,
+                                 QObject *configObj) {
     QMap<QObject *, QVariant> returnData;
 
     QVariantList data;
-    QString mdns;
+    QString      mdns;
 
     for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
         if (iter.key() == "mdns") {
@@ -50,9 +50,8 @@ void HomeAssistantPlugin::create(const QVariantMap &config, QObject *entities, Q
         }
     }
 
-    for (int i=0; i<data.length(); i++)
-    {
-        HomeAssistantBase* ha = new HomeAssistantBase(m_log, this);
+    for (int i = 0; i < data.length(); i++) {
+        HomeAssistantBase *ha = new HomeAssistantBase(m_log, this);
         ha->setup(data[i].toMap(), entities, notifications, api, configObj);
 
         QVariantMap d = data[i].toMap();
@@ -64,22 +63,17 @@ void HomeAssistantPlugin::create(const QVariantMap &config, QObject *entities, Q
     emit createDone(returnData);
 }
 
-HomeAssistantBase::HomeAssistantBase(QLoggingCategory& log, QObject *parent) :
-    m_log(log)
-{
-    this->setParent(parent);
-}
+HomeAssistantBase::HomeAssistantBase(QLoggingCategory &log, QObject *parent) : m_log(log) { this->setParent(parent); }
 
-HomeAssistantBase::~HomeAssistantBase()
-{
+HomeAssistantBase::~HomeAssistantBase() {
     if (m_thread.isRunning()) {
         m_thread.exit();
         m_thread.wait(5000);
     }
 }
 
-void HomeAssistantBase::setup(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api, QObject* configObj)
-{
+void HomeAssistantBase::setup(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api,
+                              QObject *configObj) {
     Integration::setup(config, entities);
 
     // crate a new instance and pass on variables
@@ -100,23 +94,15 @@ void HomeAssistantBase::setup(const QVariantMap& config, QObject* entities, QObj
     m_thread.start();
 }
 
-void HomeAssistantBase::connect()
-{
-    emit connectSignal();
-}
+void HomeAssistantBase::connect() { emit connectSignal(); }
 
-void HomeAssistantBase::disconnect()
-{
-    emit disconnectSignal();
-}
+void HomeAssistantBase::disconnect() { emit disconnectSignal(); }
 
-void HomeAssistantBase::sendCommand(const QString& type, const QString& entity_id, int command, const QVariant& param)
-{
+void HomeAssistantBase::sendCommand(const QString &type, const QString &entity_id, int command, const QVariant &param) {
     emit sendCommandSignal(type, entity_id, command, param);
 }
 
-void HomeAssistantBase::stateHandler(int state)
-{
+void HomeAssistantBase::stateHandler(int state) {
     if (state == 0) {
         setState(CONNECTED);
     } else if (state == 1) {
@@ -130,10 +116,9 @@ void HomeAssistantBase::stateHandler(int state)
 //// HOME ASSISTANT THREAD CLASS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api, QObject *configObj,
-                                         QLoggingCategory& log) :
-    m_log(log)
-{
+HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *entities, QObject *notifications,
+                                         QObject *api, QObject *configObj, QLoggingCategory &log)
+    : m_log(log) {
     for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
         if (iter.key() == "data") {
             QVariantMap map = iter.value().toMap();
@@ -159,19 +144,19 @@ HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *ent
     m_socket = new QWebSocket;
     m_socket->setParent(this);
 
-    QObject::connect(m_socket, SIGNAL(textMessageReceived(const QString &)), this, SLOT(onTextMessageReceived(const QString &)));
-    QObject::connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(onError(QAbstractSocket::SocketError)));
-    QObject::connect(m_socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(onStateChanged(QAbstractSocket::SocketState)));
+    QObject::connect(m_socket, SIGNAL(textMessageReceived(const QString &)), this,
+                     SLOT(onTextMessageReceived(const QString &)));
+    QObject::connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this,
+                     SLOT(onError(QAbstractSocket::SocketError)));
+    QObject::connect(m_socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this,
+                     SLOT(onStateChanged(QAbstractSocket::SocketState)));
 
     QObject::connect(m_websocketReconnect, SIGNAL(timeout()), this, SLOT(onTimeout()));
 }
 
-
-
-void HomeAssistantThread::onTextMessageReceived(const QString &message)
-{
+void HomeAssistantThread::onTextMessageReceived(const QString &message) {
     QJsonParseError parseerror;
-    QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8(), &parseerror);
+    QJsonDocument   doc = QJsonDocument::fromJson(message.toUtf8(), &parseerror);
     if (parseerror.error != QJsonParseError::NoError) {
         qCDebug(m_log) << "JSON error : " << parseerror.errorString();
         return;
@@ -184,7 +169,7 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message)
     }
 
     QString type = map.value("type").toString();
-    int id = map.value("id").toInt();
+    int     id = map.value("id").toInt();
 
     if (type == "auth_required") {
         QString auth = QString("{ \"type\": \"auth\", \"access_token\": \"%1\" }\n").arg(m_token);
@@ -232,40 +217,38 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message)
     }
 }
 
-void HomeAssistantThread::onStateChanged(QAbstractSocket::SocketState state)
-{
+void HomeAssistantThread::onStateChanged(QAbstractSocket::SocketState state) {
     if (state == QAbstractSocket::UnconnectedState && !m_userDisconnect) {
         setState(2);
         m_websocketReconnect->start();
     }
 }
 
-void HomeAssistantThread::onError(QAbstractSocket::SocketError error)
-{
+void HomeAssistantThread::onError(QAbstractSocket::SocketError error) {
     qCDebug(m_log) << error;
     m_socket->close();
     setState(2);
     m_websocketReconnect->start();
 }
 
-void HomeAssistantThread::onTimeout()
-{
+void HomeAssistantThread::onTimeout() {
     if (m_tries == 3) {
         m_websocketReconnect->stop();
 
-        QObject* param = this;
-        m_notifications->add(true, tr("Cannot connect to Home Assistant."), tr("Reconnect"), [](QObject* param){
-            Integration* i = qobject_cast<Integration *>(param);
-            i->connect();
-        }, param);
+        QObject *param = this;
+        m_notifications->add(
+            true, tr("Cannot connect to Home Assistant."), tr("Reconnect"),
+            [](QObject *param) {
+                Integration *i = qobject_cast<Integration *>(param);
+                i->connect();
+            },
+            param);
 
         disconnect();
         m_tries = 0;
-    }
-    else {
+    } else {
         m_webSocketId = 4;
-        if (m_state != 1)
-        {
+        if (m_state != 1) {
             setState(1);
         }
         QString url = QString("ws://").append(m_ip).append("/api/websocket");
@@ -275,8 +258,8 @@ void HomeAssistantThread::onTimeout()
     }
 }
 
-void HomeAssistantThread::webSocketSendCommand(const QString& domain, const QString& service, const QString& entity_id, QVariantMap *data)
-{
+void HomeAssistantThread::webSocketSendCommand(const QString &domain, const QString &service, const QString &entity_id,
+                                               QVariantMap *data) {
     // sends a command to home assistant
     m_webSocketId++;
 
@@ -290,25 +273,19 @@ void HomeAssistantThread::webSocketSendCommand(const QString& domain, const QStr
         QVariantMap d;
         d.insert("entity_id", QVariant(entity_id));
         map.insert("service_data", d);
-    }
-    else {
+    } else {
         data->insert("entity_id", QVariant(entity_id));
         map.insert("service_data", *data);
     }
     QJsonDocument doc = QJsonDocument::fromVariant(map);
-    QString message = doc.toJson(QJsonDocument::JsonFormat::Compact);
+    QString       message = doc.toJson(QJsonDocument::JsonFormat::Compact);
     m_socket->sendTextMessage(message);
-
 }
 
-int HomeAssistantThread::convertBrightnessToPercentage(float value)
-{
-    return int(round(value/255*100));
-}
+int HomeAssistantThread::convertBrightnessToPercentage(float value) { return int(round(value / 255 * 100)); }
 
-void HomeAssistantThread::updateEntity(const QString& entity_id, const QVariantMap& attr)
-{
-    EntityInterface* entity = m_entities->getEntityInterface(entity_id);
+void HomeAssistantThread::updateEntity(const QString &entity_id, const QVariantMap &attr) {
+    EntityInterface *entity = m_entities->getEntityInterface(entity_id);
     if (entity) {
         if (entity->type() == "light") {
             updateLight(entity, attr);
@@ -319,11 +296,13 @@ void HomeAssistantThread::updateEntity(const QString& entity_id, const QVariantM
         if (entity->type() == "media_player") {
             updateMediaPlayer(entity, attr);
         }
+        if (entity->type() == "climate") {
+            updateClimate(entity, attr);
+        }
     }
 }
 
-void HomeAssistantThread::updateLight(EntityInterface* entity, const QVariantMap& attr)
-{
+void HomeAssistantThread::updateLight(EntityInterface *entity, const QVariantMap &attr) {
     // state
     if (attr.value("state").toString() == "on") {
         entity->setState(LightDef::ON);
@@ -335,7 +314,8 @@ void HomeAssistantThread::updateLight(EntityInterface* entity, const QVariantMap
     // brightness
     if (entity->isSupported(LightDef::F_BRIGHTNESS)) {
         if (haAttr.contains("brightness")) {
-            entity->updateAttrByIndex(LightDef::BRIGHTNESS, convertBrightnessToPercentage(haAttr.value("brightness").toInt()));
+            entity->updateAttrByIndex(LightDef::BRIGHTNESS,
+                                      convertBrightnessToPercentage(haAttr.value("brightness").toInt()));
         } else {
             entity->updateAttrByIndex(LightDef::BRIGHTNESS, 0);
         }
@@ -343,9 +323,9 @@ void HomeAssistantThread::updateLight(EntityInterface* entity, const QVariantMap
 
     // color
     if (entity->isSupported(LightDef::F_COLOR)) {
-        QVariant color = haAttr.value("rgb_color");
+        QVariant     color = haAttr.value("rgb_color");
         QVariantList cl(color.toList());
-        char buffer[10];
+        char         buffer[10];
         sprintf(buffer, "#%02X%02X%02X", cl.value(0).toInt(), cl.value(1).toInt(), cl.value(2).toInt());
         entity->updateAttrByIndex(LightDef::COLOR, buffer);
     }
@@ -355,41 +335,46 @@ void HomeAssistantThread::updateLight(EntityInterface* entity, const QVariantMap
     }
 }
 
-void HomeAssistantThread::updateBlind(EntityInterface *entity, const QVariantMap &attr)
-{
+void HomeAssistantThread::updateBlind(EntityInterface *entity, const QVariantMap &attr) {
     QVariantMap attributes;
 
     // state
     if (attr.value("state").toString() == "open") {
         entity->setState(BlindDef::OPEN);
-        attributes.insert("state", true);
+        //        attributes.insert("state", true);
     } else {
-        attributes.insert("state", false);
+        //        attributes.insert("state", false);
     }
 
     // position
     if (entity->isSupported(BlindDef::F_POSITION)) {
-        attributes.insert("position", attr.value("attributes").toMap().value("current_position").toInt());
+        //        attributes.insert("position", attr.value("attributes").toMap().value("current_position").toInt());
+        entity->updateAttrByIndex(BlindDef::POSITION,
+                                  attr.value("attributes").toMap().value("current_position").toInt());
     }
 
-    m_entities->update(entity->entity_id(), attributes);
+    //    m_entities->update(entity->entity_id(), attributes);
 }
 
-void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVariantMap &attr)
-{
+void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVariantMap &attr) {
     QVariantMap attributes;
 
-    //state
+    // state
     if (attr.value("state").toString() == "off") {
-        attributes.insert("state", 0);
+        //        attributes.insert("state", 0);
+        entity->setState(MediaPlayerDef::OFF);
     } else if (attr.value("state").toString() == "on") {
-        attributes.insert("state", 1);
+        //        attributes.insert("state", 1);
+        entity->setState(MediaPlayerDef::ON);
     } else if (attr.value("state").toString() == "idle") {
-        attributes.insert("state", 2);
+        //        attributes.insert("state", 2);
+        entity->setState(MediaPlayerDef::IDLE);
     } else if (attr.value("state").toString() == "playing") {
-        attributes.insert("state", 3);
+        //        attributes.insert("state", 3);
+        entity->setState(MediaPlayerDef::PLAYING);
     } else {
-        attributes.insert("state", 0);
+        //        attributes.insert("state", 0);
+        entity->setState(MediaPlayerDef::OFF);
     }
 
     QVariantMap haAttr = attr.value("attributes").toMap();
@@ -400,7 +385,7 @@ void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVari
 
     // volume
     if (entity->isSupported(MediaPlayerDef::F_VOLUME_SET) && haAttr.contains("volume_level")) {
-        attributes.insert("volume", int(round(haAttr.value("volume_level").toDouble()*100)));
+        attributes.insert("volume", int(round(haAttr.value("volume_level").toDouble() * 100)));
     }
 
     // media type
@@ -433,14 +418,37 @@ void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVari
     m_entities->update(entity->entity_id(), attributes);
 }
 
-void HomeAssistantThread::setState(int state)
-{
+void HomeAssistantThread::updateClimate(EntityInterface *entity, const QVariantMap &attr) {
+    // state
+    if (attr.value("state").toString() == "off") {
+        entity->setState(ClimateDef::OFF);
+    } else if (attr.value("state").toString() == "heat") {
+        entity->setState(ClimateDef::HEAT);
+    } else if (attr.value("state").toString() == "cool") {
+        entity->setState(ClimateDef::COOL);
+    }
+
+    // current temperature
+    if (entity->isSupported(ClimateDef::F_TEMPERATURE) &&
+        attr.value("attributes").toMap().contains("current_temperature")) {
+        entity->updateAttrByIndex(ClimateDef::TEMPERATURE,
+                                  attr.value("attributes").toMap().value("current_temperature").toInt());
+    }
+
+    // target temperature
+    if (entity->isSupported(ClimateDef::F_TARGET_TEMPERATURE) &&
+        attr.value("attributes").toMap().contains("temperature")) {
+        entity->updateAttrByIndex(ClimateDef::TARGET_TEMPERATURE,
+                                  attr.value("attributes").toMap().value("temperature").toInt());
+    }
+}
+
+void HomeAssistantThread::setState(int state) {
     m_state = state;
     emit stateChanged(state);
 }
 
-void HomeAssistantThread::connect()
-{
+void HomeAssistantThread::connect() {
     m_userDisconnect = false;
 
     setState(1);
@@ -453,8 +461,7 @@ void HomeAssistantThread::connect()
     m_socket->open(QUrl(url));
 }
 
-void HomeAssistantThread::disconnect()
-{
+void HomeAssistantThread::disconnect() {
     m_userDisconnect = true;
 
     // turn of the reconnect try
@@ -466,8 +473,8 @@ void HomeAssistantThread::disconnect()
     setState(2);
 }
 
-void HomeAssistantThread::sendCommand(const QString &type, const QString &entity_id, int command, const QVariant &param)
-{
+void HomeAssistantThread::sendCommand(const QString &type, const QString &entity_id, int command,
+                                      const QVariant &param) {
     if (type == "light") {
         if (command == LightDef::C_TOGGLE)
             webSocketSendCommand(type, "toggle", entity_id, nullptr);
@@ -479,10 +486,9 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
             QVariantMap data;
             data.insert("brightness_pct", param);
             webSocketSendCommand(type, "turn_on", entity_id, &data);
-        }
-        else if (command == LightDef::C_COLOR) {
-            QColor color = param.value<QColor>();
-            QVariantMap data;
+        } else if (command == LightDef::C_COLOR) {
+            QColor       color = param.value<QColor>();
+            QVariantMap  data;
             QVariantList list;
             list.append(color.red());
             list.append(color.green());
@@ -507,10 +513,9 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
     if (type == "media_player") {
         if (command == MediaPlayerDef::C_VOLUME_SET) {
             QVariantMap data;
-            data.insert("volume_level", param.toDouble()/100);
+            data.insert("volume_level", param.toDouble() / 100);
             webSocketSendCommand(type, "volume_set", entity_id, &data);
-        }
-        else if (command == MediaPlayerDef::C_PLAY || command == MediaPlayerDef::C_PAUSE)
+        } else if (command == MediaPlayerDef::C_PLAY || command == MediaPlayerDef::C_PAUSE)
             webSocketSendCommand(type, "media_play_pause", entity_id, nullptr);
         else if (command == MediaPlayerDef::C_PREVIOUS)
             webSocketSendCommand(type, "media_previous_track", entity_id, nullptr);
@@ -520,5 +525,24 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
             webSocketSendCommand(type, "turn_on", entity_id, nullptr);
         else if (command == MediaPlayerDef::C_TURNOFF)
             webSocketSendCommand(type, "turn_off", entity_id, nullptr);
+    }
+    if (type == "climate") {
+        if (command == ClimateDef::C_ON) {
+            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
+        } else if (command == ClimateDef::C_OFF) {
+            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
+        } else if (command == ClimateDef::C_TARGET_TEMPERATURE) {
+            QVariantMap data;
+            data.insert("temperature", param.toInt());
+            webSocketSendCommand(type, "set_temperature", entity_id, &data);
+        } else if (command == ClimateDef::C_HEAT) {
+            QVariantMap data;
+            data.insert("hvac_mode", "heat");
+            webSocketSendCommand(type, "set_hvac_mode", entity_id, &data);
+        } else if (command == ClimateDef::C_COOL) {
+            QVariantMap data;
+            data.insert("hvac_mode", "cool");
+            webSocketSendCommand(type, "set_hvac_mode", entity_id, &data);
+        }
     }
 }
