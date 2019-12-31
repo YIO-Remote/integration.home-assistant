@@ -69,13 +69,14 @@ class HomeAssistantBase : public Integration {
 
  public:
     explicit HomeAssistantBase(QLoggingCategory& log, QObject* parent);
-    virtual ~HomeAssistantBase();
+    ~HomeAssistantBase() override;
 
     Q_INVOKABLE void setup(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api,
                            QObject* configObj);
-    Q_INVOKABLE void connect();
-    Q_INVOKABLE void disconnect();
-    Q_INVOKABLE void sendCommand(const QString& type, const QString& entity_id, int command, const QVariant& param);
+    Q_INVOKABLE void connect() override;
+    Q_INVOKABLE void disconnect() override;
+    Q_INVOKABLE void sendCommand(const QString& type, const QString& entity_id, int command,
+                                 const QVariant& param) override;
 
  signals:
     void connectSignal();
@@ -99,7 +100,7 @@ class HomeAssistantThread : public QObject {
 
  public:
     HomeAssistantThread(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api,
-                        QObject* configObj, QLoggingCategory& log);
+                        QObject* configObj, Integration* baseObj, QLoggingCategory& log);
 
  signals:
     void stateChanged(int state);
@@ -133,6 +134,7 @@ class HomeAssistantThread : public QObject {
     NotificationsInterface* m_notifications;
     YioAPIInterface*        m_api;
     ConfigInterface*        m_config;
+    Integration*            m_baseObj;
 
     QString m_id;
 

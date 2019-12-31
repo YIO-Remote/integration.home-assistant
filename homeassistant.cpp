@@ -77,7 +77,8 @@ void HomeAssistantBase::setup(const QVariantMap &config, QObject *entities, QObj
     Integration::setup(config, entities);
 
     // crate a new instance and pass on variables
-    HomeAssistantThread *HAThread = new HomeAssistantThread(config, entities, notifications, api, configObj, m_log);
+    HomeAssistantThread *HAThread =
+        new HomeAssistantThread(config, entities, notifications, api, configObj, this, m_log);
 
     // move to thread
     HAThread->moveToThread(&m_thread);
@@ -117,7 +118,7 @@ void HomeAssistantBase::stateHandler(int state) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *entities, QObject *notifications,
-                                         QObject *api, QObject *configObj, QLoggingCategory &log)
+                                         QObject *api, QObject *configObj, Integration *baseObj, QLoggingCategory &log)
     : m_log(log) {
     for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
         if (iter.key() == "data") {
@@ -132,6 +133,7 @@ HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *ent
     m_notifications = qobject_cast<NotificationsInterface *>(notifications);
     m_api = qobject_cast<YioAPIInterface *>(api);
     m_config = qobject_cast<ConfigInterface *>(configObj);
+    m_baseObj = baseObj;
 
     m_webSocketId = 4;
 
@@ -235,7 +237,7 @@ void HomeAssistantThread::onTimeout() {
     if (m_tries == 3) {
         m_websocketReconnect->stop();
 
-        QObject *param = this;
+        QObject *param = m_baseObj;
         m_notifications->add(
             true, tr("Cannot connect to Home Assistant."), tr("Reconnect"),
             [](QObject *param) {
@@ -468,6 +470,8 @@ void HomeAssistantThread::connect() {
     m_tries = 0;
 
     // turn on the websocket connection
+    m_socket->close();
+
     QString url = QString("ws://").append(m_ip).append("/api/websocket");
     m_socket->open(QUrl(url));
 }
