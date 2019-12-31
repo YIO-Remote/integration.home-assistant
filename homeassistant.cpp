@@ -364,19 +364,24 @@ void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVari
     // state
     if (attr.value("state").toString() == "off") {
         //        attributes.insert("state", 0);
-        entity->setState(MediaPlayerDef::OFF);
+        //        entity->setState(MediaPlayerDef::OFF);
+        entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::OFF);
     } else if (attr.value("state").toString() == "on") {
         //        attributes.insert("state", 1);
-        entity->setState(MediaPlayerDef::ON);
+        //        entity->setState(MediaPlayerDef::ON);
+        entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::ON);
     } else if (attr.value("state").toString() == "idle") {
         //        attributes.insert("state", 2);
-        entity->setState(MediaPlayerDef::IDLE);
+        //        entity->setState(MediaPlayerDef::IDLE);
+        entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::IDLE);
     } else if (attr.value("state").toString() == "playing") {
         //        attributes.insert("state", 3);
-        entity->setState(MediaPlayerDef::PLAYING);
+        //        entity->setState(MediaPlayerDef::PLAYING);
+        entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::PLAYING);
     } else {
         //        attributes.insert("state", 0);
-        entity->setState(MediaPlayerDef::OFF);
+        //        entity->setState(MediaPlayerDef::OFF);
+        entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::OFF);
     }
 
     QVariantMap haAttr = attr.value("attributes").toMap();
