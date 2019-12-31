@@ -432,14 +432,25 @@ void HomeAssistantThread::updateClimate(EntityInterface *entity, const QVariantM
     if (entity->isSupported(ClimateDef::F_TEMPERATURE) &&
         attr.value("attributes").toMap().contains("current_temperature")) {
         entity->updateAttrByIndex(ClimateDef::TEMPERATURE,
-                                  attr.value("attributes").toMap().value("current_temperature").toInt());
+                                  attr.value("attributes").toMap().value("current_temperature").toDouble());
     }
 
     // target temperature
     if (entity->isSupported(ClimateDef::F_TARGET_TEMPERATURE) &&
         attr.value("attributes").toMap().contains("temperature")) {
         entity->updateAttrByIndex(ClimateDef::TARGET_TEMPERATURE,
-                                  attr.value("attributes").toMap().value("temperature").toInt());
+                                  attr.value("attributes").toMap().value("temperature").toDouble());
+    }
+
+    // max and min temperatures
+    if (entity->isSupported(ClimateDef::F_TEMPERATURE_MAX) && attr.value("attributes").toMap().contains("max_temp")) {
+        entity->updateAttrByIndex(ClimateDef::TEMPERATURE_MAX,
+                                  attr.value("attributes").toMap().value("max_temp").toDouble());
+    }
+
+    if (entity->isSupported(ClimateDef::F_TEMPERATURE_MIN) && attr.value("attributes").toMap().contains("min_temp")) {
+        entity->updateAttrByIndex(ClimateDef::TEMPERATURE_MIN,
+                                  attr.value("attributes").toMap().value("min_temp").toDouble());
     }
 }
 
@@ -533,7 +544,7 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
             webSocketSendCommand(type, "turn_off", entity_id, nullptr);
         } else if (command == ClimateDef::C_TARGET_TEMPERATURE) {
             QVariantMap data;
-            data.insert("temperature", param.toInt());
+            data.insert("temperature", param.toDouble());
             webSocketSendCommand(type, "set_temperature", entity_id, &data);
         } else if (command == ClimateDef::C_HEAT) {
             QVariantMap data;
