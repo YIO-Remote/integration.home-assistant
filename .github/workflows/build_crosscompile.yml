@@ -1,0 +1,129 @@
+# GitHub Action to cross compile a YIO Remote Qt project for the YIO remote-os.
+# Uses the pre-build Buildroot SDK from remote-os.
+#
+# TODO:
+# - Version tag / branch for integrations.library
+# - Create a re-usable GitHub Action
+
+name: Cross Compile
+
+on: [push]
+
+env:
+  QT_VERSION: 5.12.4
+  APP_NAME: libhomeassistant
+  PROJECT_NAME: integration.home-assistant
+  TOOLCHAIN_PATH: /opt/arm-buildroot-linux-gnueabihf_sdk-buildroot
+  YIO_REMOTE_QMAKE_ARGS: "CONFIG+=debug CONFIG+=qml_debug"
+  YIO_BIN: "${GITHUB_WORKSPACE}/../binaries"
+  BUILDROOT_SDK_VERSION: v0.2.0  
+  BUILDROOT_SDK_BASE_URL: https://github.com/YIO-Remote/remote-os/releases/download
+  BUILDROOT_SDK_NAME: arm-buildroot-linux-gnueabihf_sdk-buildroot
+
+jobs:
+  cross_compile:
+    name: RPi Zero YIO remote-os
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout integration plugin
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.PROJECT_NAME}}
+      - name: Checkout integrations.library
+        uses: actions/checkout@v2
+        with:
+          repository: YIO-Remote/integrations.library
+          # FIXME check for master branch build!
+          ref: develop
+          path: integrations.library
+      - name: Install toolchain
+        run: |
+          mkdir -p /opt
+          wget -qO- $BUILDROOT_SDK_BASE_URL/${BUILDROOT_SDK_VERSION}/${BUILDROOT_SDK_NAME}.tar.gz | tar -xz -C /opt
+          /opt/${BUILDROOT_SDK_NAME}/relocate-sdk.sh
+
+      - name: Configure debug
+        run: |
+          echo "Creating Makefile..."
+          cd ${{ env.PROJECT_NAME}}
+          mkdir -p build
+          cd build
+          PATH=${TOOLCHAIN_PATH}/bin:${TOOLCHAIN_PATH}/sbin:$PATH
+          YIO_BIN=${{ env.YIO_BIN }}
+          ${TOOLCHAIN_PATH}/bin/qmake ${GITHUB_WORKSPACE}/${{ env.PROJECT_NAME}} ${YIO_REMOTE_QMAKE_ARGS}
+          make qmake_all
+      
+      - name: Build debug
+        run: |
+          cd ${{ env.PROJECT_NAME}}/build
+          PATH=${TOOLCHAIN_PATH}/bin:${TOOLCHAIN_PATH}/sbin:$PATH
+          CPU_CORES=$(getconf _NPROCESSORS_ONLN)
+          echo "Numbers of CPU cores for make: $CPU_CORES"
+          make -j$CPU_CORES
+          echo "GitHub Actions debug build
+          $(date)
+          GIT branch: $(git rev-parse --abbrev-ref HEAD)
+          GIT hash:   $(git rev-parse HEAD)
+          YIO Buildroot SDK: $BUILDROOT_SDK_VERSION
+          
+          $(${TOOLCHAIN_PATH}/bin/qmake -query)
+          
+          $(make --version)
+          
+          $(cc --version)
+
+          $(gcc --version)
+
+          $(cpp --version)
+          " > ${{ env.YIO_BIN }}/build.info
+
+      - uses: actions/upload-artifact@v1
+        id: upload_artifact_debug
+        with:
+          # Dear GitHub: dealing with env resolution is a PITA! ${{ env.YIO_BIN }} leads to a wrong path!!!
+          path: ../binaries
+          name: ${{ env.APP_NAME}}-Qt${{ env.QT_VERSION }}-debug-ARM-RPi0
+
+      - name: Configure release
+        run: |
+          cd ${{ env.PROJECT_NAME}}
+          rm -Rf build
+          echo "Creating Makefile..."
+          mkdir -p build
+          cd build
+          PATH=${TOOLCHAIN_PATH}/bin:${TOOLCHAIN_PATH}/sbin:$PATH
+          YIO_BIN=${{ env.YIO_BIN }}
+          rm -Rf $YIO_BIN
+          ${TOOLCHAIN_PATH}/bin/qmake ${GITHUB_WORKSPACE}/${{ env.PROJECT_NAME}} CONFIG+=release
+          make qmake_all
+      
+      - name: Build release
+        run: |
+          cd ${{ env.PROJECT_NAME}}/build
+          PATH=${TOOLCHAIN_PATH}/bin:${TOOLCHAIN_PATH}/sbin:$PATH
+          CPU_CORES=$(getconf _NPROCESSORS_ONLN)
+          echo "Numbers of CPU cores for make: $CPU_CORES"
+          make -j$CPU_CORES
+          echo "GitHub Actions release build
+          $(date)
+          GIT branch: $(git rev-parse --abbrev-ref HEAD)
+          GIT hash:   $(git rev-parse HEAD)
+          YIO Buildroot SDK: $BUILDROOT_SDK_VERSION
+          
+          $(${TOOLCHAIN_PATH}/bin/qmake -query)
+          
+          $(make --version)
+          
+          $(cc --version)
+
+          $(gcc --version)
+
+          $(cpp --version)
+          " > ${{ env.YIO_BIN }}/build.info
+
+      - uses: actions/upload-artifact@v1
+        id: upload_artifact_release
+        with:
+          # Dear GitHub: dealing with env resolution is a PITA! ${{ env.YIO_BIN }} leads to a wrong path!!!
+          path: ../binaries
+          name: ${{ env.APP_NAME}}-Qt${{ env.QT_VERSION }}-release-ARM-RPi0
