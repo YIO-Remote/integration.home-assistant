@@ -27,11 +27,11 @@
 #include <QJsonDocument>
 #include <QtDebug>
 
-#include "../remote-software/sources/entities/blindinterface.h"
-#include "../remote-software/sources/entities/climateinterface.h"
-#include "../remote-software/sources/entities/lightinterface.h"
-#include "../remote-software/sources/entities/mediaplayerinterface.h"
 #include "math.h"
+#include "yio-interface/entities/blindinterface.h"
+#include "yio-interface/entities/climateinterface.h"
+#include "yio-interface/entities/lightinterface.h"
+#include "yio-interface/entities/mediaplayerinterface.h"
 
 IntegrationInterface::~IntegrationInterface() {}
 
@@ -103,6 +103,7 @@ void HomeAssistantBase::sendCommand(const QString &type, const QString &entity_i
     emit sendCommandSignal(type, entity_id, command, param);
 }
 
+// FIXME use enum
 void HomeAssistantBase::stateHandler(int state) {
     if (state == 0) {
         setState(CONNECTED);
@@ -160,14 +161,14 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
     QJsonParseError parseerror;
     QJsonDocument   doc = QJsonDocument::fromJson(message.toUtf8(), &parseerror);
     if (parseerror.error != QJsonParseError::NoError) {
-        qCDebug(m_log) << "JSON error : " << parseerror.errorString();
+        qCCritical(m_log) << "JSON error : " << parseerror.errorString();
         return;
     }
     QVariantMap map = doc.toVariant().toMap();
 
     QString m = map.value("error").toString();
     if (m.length() > 0) {
-        qCDebug(m_log) << "error : " << m;
+        qCCritical(m_log) << "error : " << m;
     }
 
     QString type = map.value("type").toString();
@@ -180,7 +181,7 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
     }
 
     if (type == "auth_ok") {
-        qCDebug(m_log) << "Connection successful";
+        qCInfo(m_log) << "Connection successful";
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // FETCH STATES
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -227,7 +228,7 @@ void HomeAssistantThread::onStateChanged(QAbstractSocket::SocketState state) {
 }
 
 void HomeAssistantThread::onError(QAbstractSocket::SocketError error) {
-    qCDebug(m_log) << error;
+    qCWarning(m_log) << error << m_socket->errorString();
     m_socket->close();
     setState(2);
     m_websocketReconnect->start();
@@ -236,7 +237,7 @@ void HomeAssistantThread::onError(QAbstractSocket::SocketError error) {
 void HomeAssistantThread::onTimeout() {
     if (m_tries == 3) {
         m_websocketReconnect->stop();
-
+        qCWarning(m_log) << "Cannot connect to Home Assistant: retried 3 times.";
         QObject *param = m_baseObj;
         m_notifications->add(
             true, tr("Cannot connect to Home Assistant."), tr("Reconnect"),
@@ -284,7 +285,9 @@ void HomeAssistantThread::webSocketSendCommand(const QString &domain, const QStr
     m_socket->sendTextMessage(message);
 }
 
-int HomeAssistantThread::convertBrightnessToPercentage(float value) { return int(round(value / 255 * 100)); }
+int HomeAssistantThread::convertBrightnessToPercentage(float value) {
+    return static_cast<int>(round(value / 255 * 100));
+}
 
 void HomeAssistantThread::updateEntity(const QString &entity_id, const QVariantMap &attr) {
     EntityInterface *entity = m_entities->getEntityInterface(entity_id);
@@ -328,12 +331,14 @@ void HomeAssistantThread::updateLight(EntityInterface *entity, const QVariantMap
         QVariant     color = haAttr.value("rgb_color");
         QVariantList cl(color.toList());
         char         buffer[10];
-        sprintf(buffer, "#%02X%02X%02X", cl.value(0).toInt(), cl.value(1).toInt(), cl.value(2).toInt());
+        snprintf(buffer, sizeof(buffer), "#%02X%02X%02X", cl.value(0).toInt(), cl.value(1).toInt(),
+                 cl.value(2).toInt());
         entity->updateAttrByIndex(LightDef::COLOR, buffer);
     }
 
     // color temp
     if (entity->isSupported(LightDef::F_COLORTEMP)) {
+        // FIXME implement me!
     }
 }
 
@@ -392,7 +397,7 @@ void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVari
 
     // volume
     if (entity->isSupported(MediaPlayerDef::F_VOLUME_SET) && haAttr.contains("volume_level")) {
-        attributes.insert("volume", int(round(haAttr.value("volume_level").toDouble() * 100)));
+        attributes.insert("volume", static_cast<int>(round(haAttr.value("volume_level").toDouble() * 100)));
     }
 
     // media type
@@ -496,13 +501,13 @@ void HomeAssistantThread::disconnect() {
 void HomeAssistantThread::sendCommand(const QString &type, const QString &entity_id, int command,
                                       const QVariant &param) {
     if (type == "light") {
-        if (command == LightDef::C_TOGGLE)
+        if (command == LightDef::C_TOGGLE) {
             webSocketSendCommand(type, "toggle", entity_id, nullptr);
-        else if (command == LightDef::C_ON)
+        } else if (command == LightDef::C_ON) {
             webSocketSendCommand(type, "turn_on", entity_id, nullptr);
-        else if (command == LightDef::C_OFF)
+        } else if (command == LightDef::C_OFF) {
             webSocketSendCommand(type, "turn_off", entity_id, nullptr);
-        else if (command == LightDef::C_BRIGHTNESS) {
+        } else if (command == LightDef::C_BRIGHTNESS) {
             QVariantMap data;
             data.insert("brightness_pct", param);
             webSocketSendCommand(type, "turn_on", entity_id, &data);
@@ -518,13 +523,13 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
         }
     }
     if (type == "blind") {
-        if (command == BlindDef::C_OPEN)
+        if (command == BlindDef::C_OPEN) {
             webSocketSendCommand("cover", "open_cover", entity_id, nullptr);
-        else if (command == BlindDef::C_CLOSE)
+        } else if (command == BlindDef::C_CLOSE) {
             webSocketSendCommand("cover", "close_cover", entity_id, nullptr);
-        else if (command == BlindDef::C_STOP)
+        } else if (command == BlindDef::C_STOP) {
             webSocketSendCommand("cover", "stop_cover", entity_id, nullptr);
-        else if (command == BlindDef::C_POSITION) {
+        } else if (command == BlindDef::C_POSITION) {
             QVariantMap data;
             data.insert("position", param);
             webSocketSendCommand("cover", "set_cover_position", entity_id, &data);
@@ -535,16 +540,17 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
             QVariantMap data;
             data.insert("volume_level", param.toDouble() / 100);
             webSocketSendCommand(type, "volume_set", entity_id, &data);
-        } else if (command == MediaPlayerDef::C_PLAY || command == MediaPlayerDef::C_PAUSE)
+        } else if (command == MediaPlayerDef::C_PLAY || command == MediaPlayerDef::C_PAUSE) {
             webSocketSendCommand(type, "media_play_pause", entity_id, nullptr);
-        else if (command == MediaPlayerDef::C_PREVIOUS)
+        } else if (command == MediaPlayerDef::C_PREVIOUS) {
             webSocketSendCommand(type, "media_previous_track", entity_id, nullptr);
-        else if (command == MediaPlayerDef::C_NEXT)
+        } else if (command == MediaPlayerDef::C_NEXT) {
             webSocketSendCommand(type, "media_next_track", entity_id, nullptr);
-        else if (command == MediaPlayerDef::C_TURNON)
+        } else if (command == MediaPlayerDef::C_TURNON) {
             webSocketSendCommand(type, "turn_on", entity_id, nullptr);
-        else if (command == MediaPlayerDef::C_TURNOFF)
+        } else if (command == MediaPlayerDef::C_TURNOFF) {
             webSocketSendCommand(type, "turn_off", entity_id, nullptr);
+        }
     }
     if (type == "climate") {
         if (command == ClimateDef::C_ON) {
