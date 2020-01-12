@@ -143,8 +143,8 @@ class HomeAssistantThread : public QObject {
 
     QString           m_ip;
     QString           m_token;
-    QWebSocket*       m_socket;
-    QTimer*           m_websocketReconnect;
+    QWebSocket*       m_webSocket;
+    QTimer*           m_wsReconnectTimer;
     int               m_tries;
     int               m_webSocketId;
     bool              m_userDisconnect = false;
