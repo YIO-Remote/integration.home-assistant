@@ -1,5 +1,6 @@
 /******************************************************************************
  *
+ # Copyright (C) 2020 Markus Zehnder <business@markuszehnder.ch>
  * Copyright (C) 2019 Marton Borzak <hello@martonborzak.com>
  * Copyright (C) 2019 Christian Riedl <ric@rts.co.at>
  *
@@ -138,37 +139,37 @@ HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *ent
 
     m_webSocketId = 4;
 
-    m_websocketReconnect = new QTimer(this);
+    m_wsReconnectTimer = new QTimer(this);
 
-    m_websocketReconnect->setSingleShot(true);
-    m_websocketReconnect->setInterval(2000);
-    m_websocketReconnect->stop();
+    m_wsReconnectTimer->setSingleShot(true);
+    m_wsReconnectTimer->setInterval(2000);
+    m_wsReconnectTimer->stop();
 
-    m_socket = new QWebSocket;
-    m_socket->setParent(this);
+    m_webSocket = new QWebSocket;
+    m_webSocket->setParent(this);
 
-    QObject::connect(m_socket, SIGNAL(textMessageReceived(const QString &)), this,
+    QObject::connect(m_webSocket, SIGNAL(textMessageReceived(const QString &)), this,
                      SLOT(onTextMessageReceived(const QString &)));
-    QObject::connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this,
+    QObject::connect(m_webSocket, SIGNAL(error(QAbstractSocket::SocketError)), this,
                      SLOT(onError(QAbstractSocket::SocketError)));
-    QObject::connect(m_socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this,
+    QObject::connect(m_webSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this,
                      SLOT(onStateChanged(QAbstractSocket::SocketState)));
 
-    QObject::connect(m_websocketReconnect, SIGNAL(timeout()), this, SLOT(onTimeout()));
+    QObject::connect(m_wsReconnectTimer, SIGNAL(timeout()), this, SLOT(onTimeout()));
 }
 
 void HomeAssistantThread::onTextMessageReceived(const QString &message) {
     QJsonParseError parseerror;
     QJsonDocument   doc = QJsonDocument::fromJson(message.toUtf8(), &parseerror);
     if (parseerror.error != QJsonParseError::NoError) {
-        qCCritical(m_log) << "JSON error : " << parseerror.errorString();
+        qCCritical(m_log) << "JSON error:" << parseerror.errorString();
         return;
     }
     QVariantMap map = doc.toVariant().toMap();
 
     QString m = map.value("error").toString();
     if (m.length() > 0) {
-        qCCritical(m_log) << "error : " << m;
+        qCCritical(m_log) << "Message error:" << m;
     }
 
     QString type = map.value("type").toString();
@@ -176,16 +177,16 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
 
     if (type == "auth_required") {
         QString auth = QString("{ \"type\": \"auth\", \"access_token\": \"%1\" }\n").arg(m_token);
-        m_socket->sendTextMessage(auth);
+        m_webSocket->sendTextMessage(auth);
         return;
     }
 
     if (type == "auth_ok") {
-        qCInfo(m_log) << "Connection successful";
+        qCInfo(m_log) << "Authentication successful";
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // FETCH STATES
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        m_socket->sendTextMessage("{\"id\": 2, \"type\": \"get_states\"}\n");
+        m_webSocket->sendTextMessage("{\"id\": 2, \"type\": \"get_states\"}\n");
     }
 
     if (id == 2) {
@@ -198,7 +199,8 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // SUBSCRIBE TO EVENTS IN HOME ASSISTANT
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        m_socket->sendTextMessage("{\"id\": 3, \"type\": \"subscribe_events\", \"event_type\": \"state_changed\"}\n");
+        m_webSocket->sendTextMessage(
+            "{\"id\": 3, \"type\": \"subscribe_events\", \"event_type\": \"state_changed\"}\n");
     }
 
     if (type == "result" && id == 3) {
@@ -222,22 +224,25 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
 
 void HomeAssistantThread::onStateChanged(QAbstractSocket::SocketState state) {
     if (state == QAbstractSocket::UnconnectedState && !m_userDisconnect) {
+        qCDebug(m_log) << "State changed to 'Unconnected': starting reconnect";
         setState(2);
-        m_websocketReconnect->start();
+        m_wsReconnectTimer->start();
     }
 }
 
 void HomeAssistantThread::onError(QAbstractSocket::SocketError error) {
-    qCWarning(m_log) << error << m_socket->errorString();
-    m_socket->close();
+    qCWarning(m_log) << error << m_webSocket->errorString();
+    if (m_webSocket->isValid()) {
+        m_webSocket->close();
+    }
     setState(2);
-    m_websocketReconnect->start();
+    m_wsReconnectTimer->start();
 }
 
 void HomeAssistantThread::onTimeout() {
     if (m_tries == 3) {
-        m_websocketReconnect->stop();
-        qCWarning(m_log) << "Cannot connect to Home Assistant: retried 3 times.";
+        m_wsReconnectTimer->stop();
+        qCCritical(m_log) << "Cannot connect to Home Assistant: retried 3 times connecting to" << m_ip;
         QObject *param = m_baseObj;
         m_notifications->add(
             true, tr("Cannot connect to Home Assistant."), tr("Reconnect"),
@@ -254,8 +259,10 @@ void HomeAssistantThread::onTimeout() {
         if (m_state != 1) {
             setState(1);
         }
+
         QString url = QString("ws://").append(m_ip).append("/api/websocket");
-        m_socket->open(QUrl(url));
+        qCDebug(m_log) << "Reconnection attempt" << m_tries + 1 << "to HomeAssistant server:" << url;
+        m_webSocket->open(QUrl(url));
 
         m_tries++;
     }
@@ -282,7 +289,7 @@ void HomeAssistantThread::webSocketSendCommand(const QString &domain, const QStr
     }
     QJsonDocument doc = QJsonDocument::fromVariant(map);
     QString       message = doc.toJson(QJsonDocument::JsonFormat::Compact);
-    m_socket->sendTextMessage(message);
+    m_webSocket->sendTextMessage(message);
 }
 
 int HomeAssistantThread::convertBrightnessToPercentage(float value) {
@@ -480,20 +487,24 @@ void HomeAssistantThread::connect() {
     m_tries = 0;
 
     // turn on the websocket connection
-    m_socket->close();
+    if (m_webSocket->isValid()) {
+        m_webSocket->close();
+    }
 
     QString url = QString("ws://").append(m_ip).append("/api/websocket");
-    m_socket->open(QUrl(url));
+    qCDebug(m_log) << "Connecting to HomeAssistant server:" << url;
+    m_webSocket->open(QUrl(url));
 }
 
 void HomeAssistantThread::disconnect() {
     m_userDisconnect = true;
+    qCDebug(m_log) << "Disconnecting from HomeAssistant";
 
     // turn of the reconnect try
-    m_websocketReconnect->stop();
+    m_wsReconnectTimer->stop();
 
     // turn off the socket
-    m_socket->close();
+    m_webSocket->close();
 
     setState(2);
 }
