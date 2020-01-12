@@ -1,4 +1,10 @@
-name: Cross Compile RPi0
+# GitHub Action to cross compile a YIO Remote Qt project for the YIO remote-os.
+# Uses the pre-build Buildroot SDK from remote-os.
+#
+# TODO:
+# - Version tag / branch for integrations.library
+
+name: Cross Compile
 
 on: [push]
 
@@ -15,6 +21,7 @@ env:
 
 jobs:
   cross_compile:
+    name: RPi Zero YIO remote-os
     runs-on: ubuntu-latest
     steps:
       - name: Checkout integration plugin
