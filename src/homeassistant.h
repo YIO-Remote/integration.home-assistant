@@ -21,8 +21,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *****************************************************************************/
 
-#ifndef HOMEASSISTANT_H
-#define HOMEASSISTANT_H
+#pragma once
 
 #include <QColor>
 #include <QLoggingCategory>
@@ -33,13 +32,13 @@
 #include <QVariant>
 #include <QtWebSockets/QWebSocket>
 
-#include "../remote-software/sources/configinterface.h"
-#include "../remote-software/sources/entities/entitiesinterface.h"
-#include "../remote-software/sources/entities/entityinterface.h"
-#include "../remote-software/sources/integrations/integration.h"
-#include "../remote-software/sources/integrations/plugininterface.h"
-#include "../remote-software/sources/notificationsinterface.h"
-#include "../remote-software/sources/yioapiinterface.h"
+#include "yio-interface/configinterface.h"
+#include "yio-interface/entities/entitiesinterface.h"
+#include "yio-interface/entities/entityinterface.h"
+#include "yio-interface/notificationsinterface.h"
+#include "yio-interface/plugininterface.h"
+#include "yio-interface/yioapiinterface.h"
+#include "yio-plugin/integration.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// HOME ASSISTANT FACTORY
@@ -50,7 +49,7 @@ class HomeAssistantPlugin : public PluginInterface {
     Q_INTERFACES(PluginInterface)
 
  public:
-    explicit HomeAssistantPlugin() : m_log("homeassistant") {}
+    HomeAssistantPlugin() : m_log("homeassistant") {}
 
     void create(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api,
                 QObject* configObj) override;
@@ -68,7 +67,7 @@ class HomeAssistantBase : public Integration {
     Q_OBJECT
 
  public:
-    explicit HomeAssistantBase(QLoggingCategory& log, QObject* parent);
+    explicit HomeAssistantBase(QLoggingCategory& log, QObject* parent);  // NOLINT can't use const
     ~HomeAssistantBase() override;
 
     Q_INVOKABLE void setup(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api,
@@ -83,7 +82,8 @@ class HomeAssistantBase : public Integration {
     void disconnectSignal();
     void sendCommandSignal(const QString& type, const QString& entity_id, int command, const QVariant& param);
 
- public slots:
+ public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
+    // FIXME use enum
     void stateHandler(int state);
 
  private:
@@ -100,12 +100,14 @@ class HomeAssistantThread : public QObject {
 
  public:
     HomeAssistantThread(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api,
-                        QObject* configObj, Integration* baseObj, QLoggingCategory& log);
+                        QObject* configObj, Integration* baseObj,
+                        QLoggingCategory& log);  // NOLINT can't use const
 
  signals:
+    // FIXME use enum
     void stateChanged(int state);
 
- public slots:
+ public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
     void connect();
     void disconnect();
 
@@ -128,6 +130,7 @@ class HomeAssistantThread : public QObject {
     void updateMediaPlayer(EntityInterface* entity, const QVariantMap& attr);
     void updateClimate(EntityInterface* entity, const QVariantMap& attr);
 
+    // FIXME use enum
     void setState(int state);
 
     EntitiesInterface*      m_entities;
@@ -140,13 +143,11 @@ class HomeAssistantThread : public QObject {
 
     QString           m_ip;
     QString           m_token;
-    QWebSocket*       m_socket;
-    QTimer*           m_websocketReconnect;
+    QWebSocket*       m_webSocket;
+    QTimer*           m_wsReconnectTimer;
     int               m_tries;
     int               m_webSocketId;
     bool              m_userDisconnect = false;
     QLoggingCategory& m_log;
     int               m_state = 0;
 };
-
-#endif  // HOMEASSISTANT_H

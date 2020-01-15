@@ -1,5 +1,6 @@
 /******************************************************************************
  *
+ # Copyright (C) 2020 Markus Zehnder <business@markuszehnder.ch>
  * Copyright (C) 2019 Marton Borzak <hello@martonborzak.com>
  * Copyright (C) 2019 Christian Riedl <ric@rts.co.at>
  *
@@ -27,11 +28,11 @@
 #include <QJsonDocument>
 #include <QtDebug>
 
-#include "../remote-software/sources/entities/blindinterface.h"
-#include "../remote-software/sources/entities/climateinterface.h"
-#include "../remote-software/sources/entities/lightinterface.h"
-#include "../remote-software/sources/entities/mediaplayerinterface.h"
 #include "math.h"
+#include "yio-interface/entities/blindinterface.h"
+#include "yio-interface/entities/climateinterface.h"
+#include "yio-interface/entities/lightinterface.h"
+#include "yio-interface/entities/mediaplayerinterface.h"
 
 IntegrationInterface::~IntegrationInterface() {}
 
@@ -103,6 +104,7 @@ void HomeAssistantBase::sendCommand(const QString &type, const QString &entity_i
     emit sendCommandSignal(type, entity_id, command, param);
 }
 
+// FIXME use enum
 void HomeAssistantBase::stateHandler(int state) {
     if (state == 0) {
         setState(CONNECTED);
@@ -137,37 +139,37 @@ HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *ent
 
     m_webSocketId = 4;
 
-    m_websocketReconnect = new QTimer(this);
+    m_wsReconnectTimer = new QTimer(this);
 
-    m_websocketReconnect->setSingleShot(true);
-    m_websocketReconnect->setInterval(2000);
-    m_websocketReconnect->stop();
+    m_wsReconnectTimer->setSingleShot(true);
+    m_wsReconnectTimer->setInterval(2000);
+    m_wsReconnectTimer->stop();
 
-    m_socket = new QWebSocket;
-    m_socket->setParent(this);
+    m_webSocket = new QWebSocket;
+    m_webSocket->setParent(this);
 
-    QObject::connect(m_socket, SIGNAL(textMessageReceived(const QString &)), this,
+    QObject::connect(m_webSocket, SIGNAL(textMessageReceived(const QString &)), this,
                      SLOT(onTextMessageReceived(const QString &)));
-    QObject::connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this,
+    QObject::connect(m_webSocket, SIGNAL(error(QAbstractSocket::SocketError)), this,
                      SLOT(onError(QAbstractSocket::SocketError)));
-    QObject::connect(m_socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this,
+    QObject::connect(m_webSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this,
                      SLOT(onStateChanged(QAbstractSocket::SocketState)));
 
-    QObject::connect(m_websocketReconnect, SIGNAL(timeout()), this, SLOT(onTimeout()));
+    QObject::connect(m_wsReconnectTimer, SIGNAL(timeout()), this, SLOT(onTimeout()));
 }
 
 void HomeAssistantThread::onTextMessageReceived(const QString &message) {
     QJsonParseError parseerror;
     QJsonDocument   doc = QJsonDocument::fromJson(message.toUtf8(), &parseerror);
     if (parseerror.error != QJsonParseError::NoError) {
-        qCDebug(m_log) << "JSON error : " << parseerror.errorString();
+        qCCritical(m_log) << "JSON error:" << parseerror.errorString();
         return;
     }
     QVariantMap map = doc.toVariant().toMap();
 
     QString m = map.value("error").toString();
     if (m.length() > 0) {
-        qCDebug(m_log) << "error : " << m;
+        qCCritical(m_log) << "Message error:" << m;
     }
 
     QString type = map.value("type").toString();
@@ -175,16 +177,16 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
 
     if (type == "auth_required") {
         QString auth = QString("{ \"type\": \"auth\", \"access_token\": \"%1\" }\n").arg(m_token);
-        m_socket->sendTextMessage(auth);
+        m_webSocket->sendTextMessage(auth);
         return;
     }
 
     if (type == "auth_ok") {
-        qCDebug(m_log) << "Connection successful";
+        qCInfo(m_log) << "Authentication successful";
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // FETCH STATES
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        m_socket->sendTextMessage("{\"id\": 2, \"type\": \"get_states\"}\n");
+        m_webSocket->sendTextMessage("{\"id\": 2, \"type\": \"get_states\"}\n");
     }
 
     if (id == 2) {
@@ -197,7 +199,8 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // SUBSCRIBE TO EVENTS IN HOME ASSISTANT
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        m_socket->sendTextMessage("{\"id\": 3, \"type\": \"subscribe_events\", \"event_type\": \"state_changed\"}\n");
+        m_webSocket->sendTextMessage(
+            "{\"id\": 3, \"type\": \"subscribe_events\", \"event_type\": \"state_changed\"}\n");
     }
 
     if (type == "result" && id == 3) {
@@ -221,22 +224,25 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
 
 void HomeAssistantThread::onStateChanged(QAbstractSocket::SocketState state) {
     if (state == QAbstractSocket::UnconnectedState && !m_userDisconnect) {
+        qCDebug(m_log) << "State changed to 'Unconnected': starting reconnect";
         setState(2);
-        m_websocketReconnect->start();
+        m_wsReconnectTimer->start();
     }
 }
 
 void HomeAssistantThread::onError(QAbstractSocket::SocketError error) {
-    qCDebug(m_log) << error;
-    m_socket->close();
+    qCWarning(m_log) << error << m_webSocket->errorString();
+    if (m_webSocket->isValid()) {
+        m_webSocket->close();
+    }
     setState(2);
-    m_websocketReconnect->start();
+    m_wsReconnectTimer->start();
 }
 
 void HomeAssistantThread::onTimeout() {
     if (m_tries == 3) {
-        m_websocketReconnect->stop();
-
+        m_wsReconnectTimer->stop();
+        qCCritical(m_log) << "Cannot connect to Home Assistant: retried 3 times connecting to" << m_ip;
         QObject *param = m_baseObj;
         m_notifications->add(
             true, tr("Cannot connect to Home Assistant."), tr("Reconnect"),
@@ -253,8 +259,10 @@ void HomeAssistantThread::onTimeout() {
         if (m_state != 1) {
             setState(1);
         }
+
         QString url = QString("ws://").append(m_ip).append("/api/websocket");
-        m_socket->open(QUrl(url));
+        qCDebug(m_log) << "Reconnection attempt" << m_tries + 1 << "to HomeAssistant server:" << url;
+        m_webSocket->open(QUrl(url));
 
         m_tries++;
     }
@@ -281,10 +289,12 @@ void HomeAssistantThread::webSocketSendCommand(const QString &domain, const QStr
     }
     QJsonDocument doc = QJsonDocument::fromVariant(map);
     QString       message = doc.toJson(QJsonDocument::JsonFormat::Compact);
-    m_socket->sendTextMessage(message);
+    m_webSocket->sendTextMessage(message);
 }
 
-int HomeAssistantThread::convertBrightnessToPercentage(float value) { return int(round(value / 255 * 100)); }
+int HomeAssistantThread::convertBrightnessToPercentage(float value) {
+    return static_cast<int>(round(value / 255 * 100));
+}
 
 void HomeAssistantThread::updateEntity(const QString &entity_id, const QVariantMap &attr) {
     EntityInterface *entity = m_entities->getEntityInterface(entity_id);
@@ -328,12 +338,14 @@ void HomeAssistantThread::updateLight(EntityInterface *entity, const QVariantMap
         QVariant     color = haAttr.value("rgb_color");
         QVariantList cl(color.toList());
         char         buffer[10];
-        sprintf(buffer, "#%02X%02X%02X", cl.value(0).toInt(), cl.value(1).toInt(), cl.value(2).toInt());
+        snprintf(buffer, sizeof(buffer), "#%02X%02X%02X", cl.value(0).toInt(), cl.value(1).toInt(),
+                 cl.value(2).toInt());
         entity->updateAttrByIndex(LightDef::COLOR, buffer);
     }
 
     // color temp
     if (entity->isSupported(LightDef::F_COLORTEMP)) {
+        // FIXME implement me!
     }
 }
 
@@ -392,7 +404,7 @@ void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVari
 
     // volume
     if (entity->isSupported(MediaPlayerDef::F_VOLUME_SET) && haAttr.contains("volume_level")) {
-        attributes.insert("volume", int(round(haAttr.value("volume_level").toDouble() * 100)));
+        attributes.insert("volume", static_cast<int>(round(haAttr.value("volume_level").toDouble() * 100)));
     }
 
     // media type
@@ -475,20 +487,24 @@ void HomeAssistantThread::connect() {
     m_tries = 0;
 
     // turn on the websocket connection
-    m_socket->close();
+    if (m_webSocket->isValid()) {
+        m_webSocket->close();
+    }
 
     QString url = QString("ws://").append(m_ip).append("/api/websocket");
-    m_socket->open(QUrl(url));
+    qCDebug(m_log) << "Connecting to HomeAssistant server:" << url;
+    m_webSocket->open(QUrl(url));
 }
 
 void HomeAssistantThread::disconnect() {
     m_userDisconnect = true;
+    qCDebug(m_log) << "Disconnecting from HomeAssistant";
 
     // turn of the reconnect try
-    m_websocketReconnect->stop();
+    m_wsReconnectTimer->stop();
 
     // turn off the socket
-    m_socket->close();
+    m_webSocket->close();
 
     setState(2);
 }
@@ -496,13 +512,13 @@ void HomeAssistantThread::disconnect() {
 void HomeAssistantThread::sendCommand(const QString &type, const QString &entity_id, int command,
                                       const QVariant &param) {
     if (type == "light") {
-        if (command == LightDef::C_TOGGLE)
+        if (command == LightDef::C_TOGGLE) {
             webSocketSendCommand(type, "toggle", entity_id, nullptr);
-        else if (command == LightDef::C_ON)
+        } else if (command == LightDef::C_ON) {
             webSocketSendCommand(type, "turn_on", entity_id, nullptr);
-        else if (command == LightDef::C_OFF)
+        } else if (command == LightDef::C_OFF) {
             webSocketSendCommand(type, "turn_off", entity_id, nullptr);
-        else if (command == LightDef::C_BRIGHTNESS) {
+        } else if (command == LightDef::C_BRIGHTNESS) {
             QVariantMap data;
             data.insert("brightness_pct", param);
             webSocketSendCommand(type, "turn_on", entity_id, &data);
@@ -518,13 +534,13 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
         }
     }
     if (type == "blind") {
-        if (command == BlindDef::C_OPEN)
+        if (command == BlindDef::C_OPEN) {
             webSocketSendCommand("cover", "open_cover", entity_id, nullptr);
-        else if (command == BlindDef::C_CLOSE)
+        } else if (command == BlindDef::C_CLOSE) {
             webSocketSendCommand("cover", "close_cover", entity_id, nullptr);
-        else if (command == BlindDef::C_STOP)
+        } else if (command == BlindDef::C_STOP) {
             webSocketSendCommand("cover", "stop_cover", entity_id, nullptr);
-        else if (command == BlindDef::C_POSITION) {
+        } else if (command == BlindDef::C_POSITION) {
             QVariantMap data;
             data.insert("position", param);
             webSocketSendCommand("cover", "set_cover_position", entity_id, &data);
@@ -535,16 +551,17 @@ void HomeAssistantThread::sendCommand(const QString &type, const QString &entity
             QVariantMap data;
             data.insert("volume_level", param.toDouble() / 100);
             webSocketSendCommand(type, "volume_set", entity_id, &data);
-        } else if (command == MediaPlayerDef::C_PLAY || command == MediaPlayerDef::C_PAUSE)
+        } else if (command == MediaPlayerDef::C_PLAY || command == MediaPlayerDef::C_PAUSE) {
             webSocketSendCommand(type, "media_play_pause", entity_id, nullptr);
-        else if (command == MediaPlayerDef::C_PREVIOUS)
+        } else if (command == MediaPlayerDef::C_PREVIOUS) {
             webSocketSendCommand(type, "media_previous_track", entity_id, nullptr);
-        else if (command == MediaPlayerDef::C_NEXT)
+        } else if (command == MediaPlayerDef::C_NEXT) {
             webSocketSendCommand(type, "media_next_track", entity_id, nullptr);
-        else if (command == MediaPlayerDef::C_TURNON)
+        } else if (command == MediaPlayerDef::C_TURNON) {
             webSocketSendCommand(type, "turn_on", entity_id, nullptr);
-        else if (command == MediaPlayerDef::C_TURNOFF)
+        } else if (command == MediaPlayerDef::C_TURNOFF) {
             webSocketSendCommand(type, "turn_off", entity_id, nullptr);
+        }
     }
     if (type == "climate") {
         if (command == ClimateDef::C_ON) {
