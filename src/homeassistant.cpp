@@ -125,17 +125,17 @@ HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *ent
     for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
         if (iter.key() == "data") {
             QVariantMap map = iter.value().toMap();
-            m_ip = map.value("ip").toString();
-            m_token = map.value("token").toString();
+            m_ip            = map.value("ip").toString();
+            m_token         = map.value("token").toString();
         } else if (iter.key() == "id") {
             m_id = iter.value().toString();
         }
     }
-    m_entities = qobject_cast<EntitiesInterface *>(entities);
+    m_entities      = qobject_cast<EntitiesInterface *>(entities);
     m_notifications = qobject_cast<NotificationsInterface *>(notifications);
-    m_api = qobject_cast<YioAPIInterface *>(api);
-    m_config = qobject_cast<ConfigInterface *>(configObj);
-    m_baseObj = baseObj;
+    m_api           = qobject_cast<YioAPIInterface *>(api);
+    m_config        = qobject_cast<ConfigInterface *>(configObj);
+    m_baseObj       = baseObj;
 
     m_webSocketId = 4;
 
@@ -173,7 +173,7 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
     }
 
     QString type = map.value("type").toString();
-    int     id = map.value("id").toInt();
+    int     id   = map.value("id").toInt();
 
     if (type == "auth_required") {
         QString auth = QString("{ \"type\": \"auth\", \"access_token\": \"%1\" }\n").arg(m_token);
@@ -216,7 +216,7 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
     }
 
     if (type == "event" && id == 3) {
-        QVariantMap data = map.value("event").toMap().value("data").toMap();
+        QVariantMap data     = map.value("event").toMap().value("data").toMap();
         QVariantMap newState = data.value("new_state").toMap();
         updateEntity(data.value("entity_id").toString(), newState);
     }
@@ -287,7 +287,7 @@ void HomeAssistantThread::webSocketSendCommand(const QString &domain, const QStr
         data->insert("entity_id", QVariant(entity_id));
         map.insert("service_data", *data);
     }
-    QJsonDocument doc = QJsonDocument::fromVariant(map);
+    QJsonDocument doc     = QJsonDocument::fromVariant(map);
     QString       message = doc.toJson(QJsonDocument::JsonFormat::Compact);
     m_webSocket->sendTextMessage(message);
 }
@@ -414,7 +414,7 @@ void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVari
 
     // media image
     if (entity->isSupported(MediaPlayerDef::F_MEDIA_IMAGE) && haAttr.contains("entity_picture")) {
-        QString url = haAttr.value("entity_picture").toString();
+        QString url     = haAttr.value("entity_picture").toString();
         QString fullUrl = "";
         if (url.contains("http")) {
             fullUrl = url;
