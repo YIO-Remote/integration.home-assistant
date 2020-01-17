@@ -51,8 +51,8 @@ class HomeAssistantPlugin : public PluginInterface {
  public:
     HomeAssistantPlugin() : m_log("homeassistant") {}
 
-    void create(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api,
-                QObject* configObj) override;
+    void create(const QVariantMap& config, EntitiesInterface* entities, NotificationsInterface* notifications,
+                YioAPIInterface* api, ConfigInterface* configObj) override;
     void setLogEnabled(QtMsgType msgType, bool enable) override { m_log.setEnabled(msgType, enable); }
 
  private:
@@ -70,8 +70,8 @@ class HomeAssistantBase : public Integration {
     explicit HomeAssistantBase(QLoggingCategory& log, QObject* parent);  // NOLINT can't use const
     ~HomeAssistantBase() override;
 
-    Q_INVOKABLE void setup(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api,
-                           QObject* configObj);
+    Q_INVOKABLE void setup(const QVariantMap& config, EntitiesInterface* entities,
+                           NotificationsInterface* notifications, YioAPIInterface* api, ConfigInterface* configObj);
     Q_INVOKABLE void connect() override;
     Q_INVOKABLE void disconnect() override;
     Q_INVOKABLE void sendCommand(const QString& type, const QString& entity_id, int command,
@@ -99,8 +99,8 @@ class HomeAssistantThread : public QObject {
     Q_OBJECT
 
  public:
-    HomeAssistantThread(const QVariantMap& config, QObject* entities, QObject* notifications, QObject* api,
-                        QObject* configObj, Integration* baseObj,
+    HomeAssistantThread(const QVariantMap& config, EntitiesInterface* entities, NotificationsInterface* notifications,
+                        YioAPIInterface* api, ConfigInterface* configObj, Integration* baseObj,
                         QLoggingCategory& log);  // NOLINT can't use const
 
  signals:
@@ -139,8 +139,7 @@ class HomeAssistantThread : public QObject {
     ConfigInterface*        m_config;
     Integration*            m_baseObj;
 
-    QString m_id;
-
+    QString           m_id;
     QString           m_ip;
     QString           m_token;
     QWebSocket*       m_webSocket;
