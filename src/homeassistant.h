@@ -72,6 +72,8 @@ class HomeAssistant : public Integration {
 
     Q_INVOKABLE void connect() override;
     Q_INVOKABLE void disconnect() override;
+    Q_INVOKABLE void enterStandby() override;
+    Q_INVOKABLE void leaveStandby() override;
     Q_INVOKABLE void sendCommand(const QString& type, const QString& entity_id, int command,
                                  const QVariant& param) override;
 
@@ -92,6 +94,9 @@ class HomeAssistant : public Integration {
     void updateMediaPlayer(EntityInterface* entity, const QVariantMap& attr);
     void updateClimate(EntityInterface* entity, const QVariantMap& attr);
 
+    void onHeartbeat();
+    void onHeartbeatTimeout();
+
  private:
     QString     m_ip;
     QString     m_token;
@@ -99,5 +104,8 @@ class HomeAssistant : public Integration {
     QTimer*     m_wsReconnectTimer;
     int         m_tries;
     int         m_webSocketId;
-    bool        m_userDisconnect = false;
+    bool        m_userDisconnect         = false;
+    int         m_heartbeatCheckInterval = 30000;
+    QTimer*     m_heartbeatTimer         = new QTimer(this);
+    QTimer*     m_heartbeatTimeoutTimer  = new QTimer(this);
 };
