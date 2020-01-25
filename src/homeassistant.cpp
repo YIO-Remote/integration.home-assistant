@@ -53,8 +53,8 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
     for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
         if (iter.key() == Integration::OBJ_DATA) {
             QVariantMap map = iter.value().toMap();
-            m_ip = map.value(Integration::KEY_DATA_IP).toString();
-            m_token = map.value(Integration::KEY_DATA_TOKEN).toString();
+            m_ip            = map.value(Integration::KEY_DATA_IP).toString();
+            m_token         = map.value(Integration::KEY_DATA_TOKEN).toString();
         }
     }
 
@@ -77,6 +77,15 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
                      SLOT(onStateChanged(QAbstractSocket::SocketState)));
 
     QObject::connect(m_wsReconnectTimer, SIGNAL(timeout()), this, SLOT(onTimeout()));
+
+    // set up timer to check heartbeat
+    m_heartbeatTimer->setInterval(m_heartbeatCheckInterval);
+    QObject::connect(m_heartbeatTimer, &QTimer::timeout, this, &HomeAssistant::onHeartbeat);
+
+    // set up hearbeat timeout timer
+    m_heartbeatTimeoutTimer->setSingleShot(true);
+    m_heartbeatTimeoutTimer->setInterval(m_heartbeatCheckInterval / 2);
+    QObject::connect(m_heartbeatTimeoutTimer, &QTimer::timeout, this, &HomeAssistant::onHeartbeatTimeout);
 }
 
 void HomeAssistant::onTextMessageReceived(const QString &message) {
@@ -94,7 +103,7 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
     }
 
     QString type = map.value("type").toString();
-    int     id = map.value("id").toInt();
+    int     id   = map.value("id").toInt();
 
     if (type == "auth_required") {
         QString auth = QString("{ \"type\": \"auth\", \"access_token\": \"%1\" }\n").arg(m_token);
@@ -132,6 +141,8 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
 
         // remove notifications that we don't need anymore as the integration is connected
         m_notifications->remove("Cannot connect to Home Assistant.");
+
+        m_heartbeatTimer->start();
     }
 
     if (id == m_webSocketId) {
@@ -140,9 +151,15 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
 
     // FIXME magic number!
     if (type == "event" && id == 3) {
-        QVariantMap data = map.value("event").toMap().value("data").toMap();
+        QVariantMap data     = map.value("event").toMap().value("data").toMap();
         QVariantMap newState = data.value("new_state").toMap();
         updateEntity(data.value("entity_id").toString(), newState);
+    }
+
+    // heartbeat
+    if (type == "pong") {
+        qCDebug(m_logCategory) << "Got heartbeat!";
+        m_heartbeatTimeoutTimer->stop();
     }
 }
 
@@ -170,12 +187,13 @@ void HomeAssistant::onTimeout() {
         qCCritical(m_logCategory) << "Cannot connect to Home Assistant: retried 3 times connecting to" << m_ip;
         QObject *param = this;
 
-        m_notifications->add(true, tr("Cannot connect to Home Assistant."), tr("Reconnect"),
-                             [](QObject *param) {
-                                 Integration *i = qobject_cast<Integration *>(param);
-                                 i->connect();
-                             },
-                             param);
+        m_notifications->add(
+            true, tr("Cannot connect to Home Assistant."), tr("Reconnect"),
+            [](QObject *param) {
+                Integration *i = qobject_cast<Integration *>(param);
+                i->connect();
+            },
+            param);
 
         disconnect();
         m_tries = 0;
@@ -213,7 +231,7 @@ void HomeAssistant::webSocketSendCommand(const QString &domain, const QString &s
         data->insert("entity_id", QVariant(entity_id));
         map.insert("service_data", *data);
     }
-    QJsonDocument doc = QJsonDocument::fromVariant(map);
+    QJsonDocument doc     = QJsonDocument::fromVariant(map);
     QString       message = doc.toJson(QJsonDocument::JsonFormat::Compact);
     m_webSocket->sendTextMessage(message);
 }
@@ -324,7 +342,7 @@ void HomeAssistant::updateMediaPlayer(EntityInterface *entity, const QVariantMap
 
     // media image
     if (entity->isSupported(MediaPlayerDef::F_MEDIA_IMAGE) && haAttr.contains("entity_picture")) {
-        QString url = haAttr.value("entity_picture").toString();
+        QString url     = haAttr.value("entity_picture").toString();
         QString fullUrl = "";
         if (url.contains("http")) {
             fullUrl = url;
@@ -413,6 +431,14 @@ void HomeAssistant::disconnect() {
     setState(DISCONNECTED);
 }
 
+void HomeAssistant::enterStandby() {
+    qCDebug(m_logCategory) << "Entering standby";
+    m_heartbeatTimer->stop();
+    m_heartbeatTimeoutTimer->stop();
+}
+
+void HomeAssistant::leaveStandby() { m_heartbeatTimer->start(); }
+
 void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, int command, const QVariant &param) {
     if (type == "light") {
         if (command == LightDef::C_TOGGLE) {
@@ -485,4 +511,25 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
             webSocketSendCommand(type, "set_hvac_mode", entity_id, &data);
         }
     }
+}
+
+void HomeAssistant::onHeartbeat() {
+    qCDebug(m_logCategory) << "Sending hearbeat request";
+    m_webSocketId++;
+    QString msg = QString("{ \"id\": \"%1\", \"type\": \"ping\" }\n").arg(m_webSocketId);
+    m_webSocket->sendTextMessage(msg);
+    m_heartbeatTimeoutTimer->start();
+}
+
+void HomeAssistant::onHeartbeatTimeout() {
+    disconnect();
+
+    QObject *param = this;
+    m_notifications->add(
+        true, tr("Connection lost to ").append(friendlyName()).append("."), tr("Reconnect"),
+        [](QObject *param) {
+            Integration *i = qobject_cast<Integration *>(param);
+            i->connect();
+        },
+        param);
 }
