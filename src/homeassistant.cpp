@@ -34,113 +34,34 @@
 #include "yio-interface/entities/lightinterface.h"
 #include "yio-interface/entities/mediaplayerinterface.h"
 
-IntegrationInterface::~IntegrationInterface() {}
+HomeAssistantPlugin::HomeAssistantPlugin() : Plugin("homeassistant", true) {}
 
-void HomeAssistantPlugin::create(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api,
-                                 QObject *configObj) {
-    QMap<QObject *, QVariant> returnData;
-
-    QVariantList data;
-    QString      mdns;
-
-    for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
-        if (iter.key() == "mdns") {
-            mdns = iter.value().toString();
-        } else if (iter.key() == "data") {
-            data = iter.value().toList();
-        }
-    }
-
-    for (int i = 0; i < data.length(); i++) {
-        HomeAssistantBase *ha = new HomeAssistantBase(m_log, this);
-        ha->setup(data[i].toMap(), entities, notifications, api, configObj);
-
-        QVariantMap d = data[i].toMap();
-        d.insert("mdns", mdns);
-        d.insert("type", config.value("type").toString());
-        returnData.insert(ha, d);
-    }
-
-    emit createDone(returnData);
-}
-
-HomeAssistantBase::HomeAssistantBase(QLoggingCategory &log, QObject *parent) : m_log(log) { this->setParent(parent); }
-
-HomeAssistantBase::~HomeAssistantBase() {
-    if (m_thread.isRunning()) {
-        m_thread.exit();
-        m_thread.wait(5000);
-    }
-}
-
-void HomeAssistantBase::setup(const QVariantMap &config, QObject *entities, QObject *notifications, QObject *api,
-                              QObject *configObj) {
-    Integration::setup(config, entities);
-
-    // crate a new instance and pass on variables
-    HomeAssistantThread *HAThread =
-        new HomeAssistantThread(config, entities, notifications, api, configObj, this, m_log);
-
-    // move to thread
-    HAThread->moveToThread(&m_thread);
-
-    // connect signals and slots
-    QObject::connect(&m_thread, &QThread::finished, HAThread, &QObject::deleteLater);
-
-    QObject::connect(this, &HomeAssistantBase::connectSignal, HAThread, &HomeAssistantThread::connect);
-    QObject::connect(this, &HomeAssistantBase::disconnectSignal, HAThread, &HomeAssistantThread::disconnect);
-    QObject::connect(this, &HomeAssistantBase::sendCommandSignal, HAThread, &HomeAssistantThread::sendCommand);
-
-    QObject::connect(HAThread, &HomeAssistantThread::stateChanged, this, &HomeAssistantBase::stateHandler);
-
-    m_thread.start();
-}
-
-void HomeAssistantBase::connect() { emit connectSignal(); }
-
-void HomeAssistantBase::disconnect() { emit disconnectSignal(); }
-
-void HomeAssistantBase::sendCommand(const QString &type, const QString &entity_id, int command, const QVariant &param) {
-    emit sendCommandSignal(type, entity_id, command, param);
-}
-
-// FIXME use enum
-void HomeAssistantBase::stateHandler(int state) {
-    if (state == 0) {
-        setState(CONNECTED);
-    } else if (state == 1) {
-        setState(CONNECTING);
-    } else if (state == 2) {
-        setState(DISCONNECTED);
-    }
+Integration *HomeAssistantPlugin::createIntegration(const QVariantMap &config, EntitiesInterface *entities,
+                                                    NotificationsInterface *notifications, YioAPIInterface *api,
+                                                    ConfigInterface *configObj) {
+    return new HomeAssistant(config, entities, notifications, api, configObj, this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// HOME ASSISTANT THREAD CLASS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *entities, QObject *notifications,
-                                         QObject *api, QObject *configObj, Integration *baseObj, QLoggingCategory &log)
-    : m_log(log) {
+HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entities,
+                             NotificationsInterface *notifications, YioAPIInterface *api, ConfigInterface *configObj,
+                             Plugin *plugin)
+    : Integration(config, entities, notifications, api, configObj, plugin) {
     for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
-        if (iter.key() == "data") {
+        if (iter.key() == Integration::OBJ_DATA) {
             QVariantMap map = iter.value().toMap();
-            m_ip            = map.value("ip").toString();
-            m_token         = map.value("token").toString();
-        } else if (iter.key() == "id") {
-            m_id = iter.value().toString();
+            m_ip = map.value(Integration::KEY_DATA_IP).toString();
+            m_token = map.value(Integration::KEY_DATA_TOKEN).toString();
         }
     }
-    m_entities      = qobject_cast<EntitiesInterface *>(entities);
-    m_notifications = qobject_cast<NotificationsInterface *>(notifications);
-    m_api           = qobject_cast<YioAPIInterface *>(api);
-    m_config        = qobject_cast<ConfigInterface *>(configObj);
-    m_baseObj       = baseObj;
 
+    // FIXME magic number
     m_webSocketId = 4;
 
     m_wsReconnectTimer = new QTimer(this);
-
     m_wsReconnectTimer->setSingleShot(true);
     m_wsReconnectTimer->setInterval(2000);
     m_wsReconnectTimer->stop();
@@ -158,22 +79,22 @@ HomeAssistantThread::HomeAssistantThread(const QVariantMap &config, QObject *ent
     QObject::connect(m_wsReconnectTimer, SIGNAL(timeout()), this, SLOT(onTimeout()));
 }
 
-void HomeAssistantThread::onTextMessageReceived(const QString &message) {
+void HomeAssistant::onTextMessageReceived(const QString &message) {
     QJsonParseError parseerror;
     QJsonDocument   doc = QJsonDocument::fromJson(message.toUtf8(), &parseerror);
     if (parseerror.error != QJsonParseError::NoError) {
-        qCCritical(m_log) << "JSON error:" << parseerror.errorString();
+        qCCritical(m_logCategory) << "JSON error:" << parseerror.errorString();
         return;
     }
     QVariantMap map = doc.toVariant().toMap();
 
     QString m = map.value("error").toString();
     if (m.length() > 0) {
-        qCCritical(m_log) << "Message error:" << m;
+        qCCritical(m_logCategory) << "Message error:" << m;
     }
 
     QString type = map.value("type").toString();
-    int     id   = map.value("id").toInt();
+    int     id = map.value("id").toInt();
 
     if (type == "auth_required") {
         QString auth = QString("{ \"type\": \"auth\", \"access_token\": \"%1\" }\n").arg(m_token);
@@ -182,13 +103,14 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
     }
 
     if (type == "auth_ok") {
-        qCInfo(m_log) << "Authentication successful";
+        qCInfo(m_logCategory) << "Authentication successful";
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // FETCH STATES
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         m_webSocket->sendTextMessage("{\"id\": 2, \"type\": \"get_states\"}\n");
     }
 
+    // FIXME magic number!
     if (id == 2) {
         QVariantList list = map.value("result").toList();
         for (int i = 0; i < list.length(); i++) {
@@ -203,73 +125,77 @@ void HomeAssistantThread::onTextMessageReceived(const QString &message) {
             "{\"id\": 3, \"type\": \"subscribe_events\", \"event_type\": \"state_changed\"}\n");
     }
 
+    // FIXME magic number!
     if (type == "result" && id == 3) {
-        setState(0);
-        qCDebug(m_log) << "Subscribed to state changes";
+        setState(CONNECTED);
+        qCDebug(m_logCategory) << "Subscribed to state changes";
 
         // remove notifications that we don't need anymore as the integration is connected
         m_notifications->remove("Cannot connect to Home Assistant.");
     }
 
     if (id == m_webSocketId) {
-        qCDebug(m_log) << "Command successful";
+        qCDebug(m_logCategory) << "Command successful";
     }
 
+    // FIXME magic number!
     if (type == "event" && id == 3) {
-        QVariantMap data     = map.value("event").toMap().value("data").toMap();
+        QVariantMap data = map.value("event").toMap().value("data").toMap();
         QVariantMap newState = data.value("new_state").toMap();
         updateEntity(data.value("entity_id").toString(), newState);
     }
 }
 
-void HomeAssistantThread::onStateChanged(QAbstractSocket::SocketState state) {
+void HomeAssistant::onStateChanged(QAbstractSocket::SocketState state) {
     if (state == QAbstractSocket::UnconnectedState && !m_userDisconnect) {
-        qCDebug(m_log) << "State changed to 'Unconnected': starting reconnect";
-        setState(2);
+        qCDebug(m_logCategory) << "State changed to 'Unconnected': starting reconnect";
+        setState(DISCONNECTED);
         m_wsReconnectTimer->start();
     }
 }
 
-void HomeAssistantThread::onError(QAbstractSocket::SocketError error) {
-    qCWarning(m_log) << error << m_webSocket->errorString();
+void HomeAssistant::onError(QAbstractSocket::SocketError error) {
+    qCWarning(m_logCategory) << error << m_webSocket->errorString();
     if (m_webSocket->isValid()) {
         m_webSocket->close();
     }
-    setState(2);
+    setState(DISCONNECTED);
     m_wsReconnectTimer->start();
 }
 
-void HomeAssistantThread::onTimeout() {
+void HomeAssistant::onTimeout() {
     if (m_tries == 3) {
         m_wsReconnectTimer->stop();
-        qCCritical(m_log) << "Cannot connect to Home Assistant: retried 3 times connecting to" << m_ip;
-        QObject *param = m_baseObj;
-        m_notifications->add(
-            true, tr("Cannot connect to Home Assistant."), tr("Reconnect"),
-            [](QObject *param) {
-                Integration *i = qobject_cast<Integration *>(param);
-                i->connect();
-            },
-            param);
+
+        qCCritical(m_logCategory) << "Cannot connect to Home Assistant: retried 3 times connecting to" << m_ip;
+        QObject *param = this;
+
+        m_notifications->add(true, tr("Cannot connect to Home Assistant."), tr("Reconnect"),
+                             [](QObject *param) {
+                                 Integration *i = qobject_cast<Integration *>(param);
+                                 i->connect();
+                             },
+                             param);
 
         disconnect();
         m_tries = 0;
     } else {
+        // FIXME magic number
         m_webSocketId = 4;
-        if (m_state != 1) {
-            setState(1);
+        if (m_state != CONNECTING) {
+            setState(CONNECTING);
         }
 
         QString url = QString("ws://").append(m_ip).append("/api/websocket");
-        qCDebug(m_log) << "Reconnection attempt" << m_tries + 1 << "to HomeAssistant server:" << url;
+        qCDebug(m_logCategory) << "Reconnection attempt" << m_tries + 1 << "to HomeAssistant server:" << url;
         m_webSocket->open(QUrl(url));
 
         m_tries++;
     }
 }
 
-void HomeAssistantThread::webSocketSendCommand(const QString &domain, const QString &service, const QString &entity_id,
-                                               QVariantMap *data) {
+void HomeAssistant::webSocketSendCommand(const QString &domain, const QString &service, const QString &entity_id,
+                                         QVariantMap *data) {
     // sends a command to home assistant
     m_webSocketId++;
 
@@ -287,16 +213,14 @@ void HomeAssistantThread::webSocketSendCommand(const QString &domain, const QStr
         data->insert("entity_id", QVariant(entity_id));
         map.insert("service_data", *data);
     }
-    QJsonDocument doc     = QJsonDocument::fromVariant(map);
+    QJsonDocument doc = QJsonDocument::fromVariant(map);
     QString       message = doc.toJson(QJsonDocument::JsonFormat::Compact);
     m_webSocket->sendTextMessage(message);
 }
 
-int HomeAssistantThread::convertBrightnessToPercentage(float value) {
-    return static_cast<int>(round(value / 255 * 100));
-}
+int HomeAssistant::convertBrightnessToPercentage(float value) { return static_cast<int>(round(value / 255 * 100)); }
 
-void HomeAssistantThread::updateEntity(const QString &entity_id, const QVariantMap &attr) {
+void HomeAssistant::updateEntity(const QString &entity_id, const QVariantMap &attr) {
     EntityInterface *entity = m_entities->getEntityInterface(entity_id);
     if (entity) {
         if (entity->type() == "light") {
@@ -314,7 +238,7 @@ void HomeAssistantThread::updateEntity(const QString &entity_id, const QVariantM
     }
 }
 
-void HomeAssistantThread::updateLight(EntityInterface *entity, const QVariantMap &attr) {
+void HomeAssistant::updateLight(EntityInterface *entity, const QVariantMap &attr) {
     // state
     if (attr.value("state").toString() == "on") {
         entity->setState(LightDef::ON);
@@ -349,101 +273,86 @@ void HomeAssistantThread::updateLight(EntityInterface *entity, const QVariantMap
     }
 }
 
-void HomeAssistantThread::updateBlind(EntityInterface *entity, const QVariantMap &attr) {
+void HomeAssistant::updateBlind(EntityInterface *entity, const QVariantMap &attr) {
     QVariantMap attributes;
 
     // state
     if (attr.value("state").toString() == "open") {
         entity->setState(BlindDef::OPEN);
-        //        attributes.insert("state", true);
     } else {
-        //        attributes.insert("state", false);
+        entity->setState(BlindDef::CLOSED);
     }
 
     // position
     if (entity->isSupported(BlindDef::F_POSITION)) {
-        //        attributes.insert("position", attr.value("attributes").toMap().value("current_position").toInt());
         entity->updateAttrByIndex(BlindDef::POSITION,
                                   attr.value("attributes").toMap().value("current_position").toInt());
     }
-
-    //    m_entities->update(entity->entity_id(), attributes);
 }
 
-void HomeAssistantThread::updateMediaPlayer(EntityInterface *entity, const QVariantMap &attr) {
-    QVariantMap attributes;
-
+void HomeAssistant::updateMediaPlayer(EntityInterface *entity, const QVariantMap &attr) {
     // state
-    if (attr.value("state").toString() == "off") {
-        //        attributes.insert("state", 0);
-        //        entity->setState(MediaPlayerDef::OFF);
+    QString state = attr.value("state").toString();
+    if (state == "off") {
         entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::OFF);
-    } else if (attr.value("state").toString() == "on") {
-        //        attributes.insert("state", 1);
-        //        entity->setState(MediaPlayerDef::ON);
+    } else if (state == "on") {
         entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::ON);
-    } else if (attr.value("state").toString() == "idle") {
-        //        attributes.insert("state", 2);
-        //        entity->setState(MediaPlayerDef::IDLE);
+    } else if (state == "idle") {
         entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::IDLE);
-    } else if (attr.value("state").toString() == "playing") {
-        //        attributes.insert("state", 3);
-        //        entity->setState(MediaPlayerDef::PLAYING);
+    } else if (state == "playing") {
         entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::PLAYING);
     } else {
-        //        attributes.insert("state", 0);
-        //        entity->setState(MediaPlayerDef::OFF);
         entity->updateAttrByIndex(MediaPlayerDef::STATE, MediaPlayerDef::OFF);
     }
 
     QVariantMap haAttr = attr.value("attributes").toMap();
     // source
     if (entity->isSupported(MediaPlayerDef::F_SOURCE) && haAttr.contains("source")) {
-        attributes.insert("source", haAttr.value("source").toString());
+        entity->updateAttrByIndex(MediaPlayerDef::SOURCE, haAttr.value("source").toString());
     }
 
     // volume
     if (entity->isSupported(MediaPlayerDef::F_VOLUME_SET) && haAttr.contains("volume_level")) {
-        attributes.insert("volume", static_cast<int>(round(haAttr.value("volume_level").toDouble() * 100)));
+        entity->updateAttrByIndex(MediaPlayerDef::VOLUME,
+                                  static_cast<int>(round(haAttr.value("volume_level").toDouble() * 100)));
     }
 
     // media type
     if (entity->isSupported(MediaPlayerDef::F_MEDIA_TYPE) && haAttr.contains("media_content_type")) {
-        attributes.insert("mediaType", haAttr.value("media_content_type").toString());
+        entity->updateAttrByIndex(MediaPlayerDef::MEDIATYPE, haAttr.value("media_content_type").toString());
     }
 
     // media image
     if (entity->isSupported(MediaPlayerDef::F_MEDIA_IMAGE) && haAttr.contains("entity_picture")) {
-        QString url     = haAttr.value("entity_picture").toString();
+        QString url = haAttr.value("entity_picture").toString();
         QString fullUrl = "";
         if (url.contains("http")) {
             fullUrl = url;
         } else {
             fullUrl = QString("http://").append(m_ip).append(url);
         }
-        attributes.insert("mediaImage", fullUrl);
+        entity->updateAttrByIndex(MediaPlayerDef::MEDIAIMAGE, fullUrl);
     }
 
     // media title
     if (entity->isSupported(MediaPlayerDef::F_MEDIA_TITLE) && haAttr.contains("media_title")) {
-        attributes.insert("mediaTitle", haAttr.value("media_title").toString());
+        entity->updateAttrByIndex(MediaPlayerDef::MEDIATITLE, haAttr.value("media_title").toString());
     }
 
     // media artist
     if (entity->isSupported(MediaPlayerDef::F_MEDIA_ARTIST) && haAttr.contains("media_artist")) {
-        attributes.insert("mediaArtist", haAttr.value("media_artist").toString());
+        entity->updateAttrByIndex(MediaPlayerDef::MEDIAARTIST, haAttr.value("media_artist").toString());
     }
-
-    m_entities->update(entity->entity_id(), attributes);
 }
 
-void HomeAssistantThread::updateClimate(EntityInterface *entity, const QVariantMap &attr) {
+void HomeAssistant::updateClimate(EntityInterface *entity, const QVariantMap &attr) {
     // state
-    if (attr.value("state").toString() == "off") {
+    QString state = attr.value("state").toString();
+    if (state == "off") {
         entity->setState(ClimateDef::OFF);
-    } else if (attr.value("state").toString() == "heat") {
+    } else if (state == "heat") {
         entity->setState(ClimateDef::HEAT);
-    } else if (attr.value("state").toString() == "cool") {
+    } else if (state == "cool") {
         entity->setState(ClimateDef::COOL);
     }
 
@@ -473,15 +382,10 @@ void HomeAssistantThread::updateClimate(EntityInterface *entity, const QVariantM
     }
 }
 
-void HomeAssistantThread::setState(int state) {
-    m_state = state;
-    emit stateChanged(state);
-}
-
-void HomeAssistantThread::connect() {
+void HomeAssistant::connect() {
     m_userDisconnect = false;
 
-    setState(1);
+    setState(CONNECTING);
 
     // reset the reconnnect trial variable
     m_tries = 0;
@@ -492,13 +396,13 @@ void HomeAssistantThread::connect() {
     }
 
     QString url = QString("ws://").append(m_ip).append("/api/websocket");
-    qCDebug(m_log) << "Connecting to HomeAssistant server:" << url;
+    qCDebug(m_logCategory) << "Connecting to HomeAssistant server:" << url;
     m_webSocket->open(QUrl(url));
 }
 
-void HomeAssistantThread::disconnect() {
+void HomeAssistant::disconnect() {
     m_userDisconnect = true;
-    qCDebug(m_log) << "Disconnecting from HomeAssistant";
+    qCDebug(m_logCategory) << "Disconnecting from HomeAssistant";
 
     // turn of the reconnect try
     m_wsReconnectTimer->stop();
@@ -506,11 +410,10 @@ void HomeAssistantThread::disconnect() {
     // turn off the socket
     m_webSocket->close();
 
-    setState(2);
+    setState(DISCONNECTED);
 }
 
-void HomeAssistantThread::sendCommand(const QString &type, const QString &entity_id, int command,
-                                      const QVariant &param) {
+void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, int command, const QVariant &param) {
     if (type == "light") {
         if (command == LightDef::C_TOGGLE) {
             webSocketSendCommand(type, "toggle", entity_id, nullptr);
