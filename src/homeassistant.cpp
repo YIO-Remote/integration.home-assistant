@@ -126,6 +126,9 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
         QVariantList list = map.value("result").toList();
         for (int i = 0; i < list.length(); i++) {
             QVariantMap result = list.value(i).toMap();
+            // append the list of available entities
+            m_allAvailableEntities.append(result.value("entity_id").toString());
+
             updateEntity(result.value("entity_id").toString(), result);
         }
 
@@ -440,6 +443,8 @@ void HomeAssistant::enterStandby() {
 }
 
 void HomeAssistant::leaveStandby() { m_heartbeatTimer->start(); }
+
+QStringList HomeAssistant::getAllAvailableEntities() { return m_allAvailableEntities; }
 
 void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, int command, const QVariant &param) {
     if (type == "light") {
