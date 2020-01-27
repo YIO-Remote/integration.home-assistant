@@ -442,8 +442,6 @@ void HomeAssistant::enterStandby() {
 
 void HomeAssistant::leaveStandby() { m_heartbeatTimer->start(); }
 
-QStringList HomeAssistant::getAllAvailableEntities() { return m_allAvailableEntities; }
-
 void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, int command, const QVariant &param) {
     if (type == "light") {
         if (command == LightDef::C_TOGGLE) {
