@@ -77,7 +77,6 @@ class HomeAssistant : public Integration {
     Q_INVOKABLE void disconnect() override;
     Q_INVOKABLE void enterStandby() override;
     Q_INVOKABLE void leaveStandby() override;
-    QStringList      getAllAvailableEntities() override;
     Q_INVOKABLE void sendCommand(const QString& type, const QString& entity_id, int command,
                                  const QVariant& param) override;
 
@@ -112,5 +111,4 @@ class HomeAssistant : public Integration {
     int         m_heartbeatCheckInterval = 30000;
     QTimer*     m_heartbeatTimer         = new QTimer(this);
     QTimer*     m_heartbeatTimeoutTimer  = new QTimer(this);
-    QStringList m_allAvailableEntities;
 };
