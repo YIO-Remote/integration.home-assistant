@@ -6,7 +6,7 @@
     <message>
       <location filename="../src/homeassistant.cpp" line="194"/>
       <source>Cannot connect to Home Assistant.</source>
-      <translation type="unfinished">Cannot connect to Home Assistant.</translation>
+      <translation>Ingen forbindelse til Home Assistent.</translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="194"/>
