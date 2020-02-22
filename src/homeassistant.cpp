@@ -428,6 +428,10 @@ void HomeAssistant::disconnect() {
     // turn of the reconnect try
     m_wsReconnectTimer->stop();
 
+    // turn off heartbeat
+    m_heartbeatTimer->stop();
+    m_heartbeatTimeoutTimer->stop();
+
     // turn off the socket
     m_webSocket->close();
 
