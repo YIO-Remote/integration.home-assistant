@@ -38,8 +38,7 @@ unix {
 
 # === start TRANSLATION section =======================================
 lupdate_only{
-SOURCES = src/homeassistant.h \
-          src/homeassistant.cpp
+SOURCES = src/homeassistant.cpp
 }
 
 TRANSLATIONS = translations/bg_BG.ts \
