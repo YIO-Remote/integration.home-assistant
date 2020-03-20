@@ -2,16 +2,22 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="nl" sourcelanguage="en">
   <context>
-    <name>HomeAssistantThread</name>
+    <name>HomeAssistant</name>
     <message>
-      <location filename="../homeassistant.cpp" line="257"/>
+      <location filename="../src/homeassistant.cpp" line="194"/>
       <source>Cannot connect to Home Assistant.</source>
       <translation>Verbinding maken met Home Assistant is mislukt.</translation>
     </message>
     <message>
-      <location filename="../homeassistant.cpp" line="257"/>
+      <location filename="../src/homeassistant.cpp" line="194"/>
+      <location filename="../src/homeassistant.cpp" line="532"/>
       <source>Reconnect</source>
       <translation>Opnieuw verbinden</translation>
+    </message>
+    <message>
+      <location filename="../src/homeassistant.cpp" line="532"/>
+      <source>Connection lost to </source>
+      <translation>Verbinding verloren met </translation>
     </message>
   </context>
 </TS>

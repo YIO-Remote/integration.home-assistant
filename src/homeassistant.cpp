@@ -60,6 +60,8 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
         }
     }
 
+    qRegisterMetaType<QAbstractSocket::SocketState>();
+
     // FIXME magic number
     m_webSocketId = 4;
 
@@ -71,14 +73,12 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
     m_webSocket = new QWebSocket;
     m_webSocket->setParent(this);
 
-    QObject::connect(m_webSocket, SIGNAL(textMessageReceived(const QString &)), this,
-                     SLOT(onTextMessageReceived(const QString &)));
-    QObject::connect(m_webSocket, SIGNAL(error(QAbstractSocket::SocketError)), this,
-                     SLOT(onError(QAbstractSocket::SocketError)));
-    QObject::connect(m_webSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this,
-                     SLOT(onStateChanged(QAbstractSocket::SocketState)));
+    QObject::connect(m_webSocket, &QWebSocket::textMessageReceived, this, &HomeAssistant::onTextMessageReceived);
+    QObject::connect(m_webSocket, static_cast<void (QWebSocket::*)(QAbstractSocket::SocketError)>(&QWebSocket::error),
+                     this, &HomeAssistant::onError);
+    QObject::connect(m_webSocket, &QWebSocket::stateChanged, this, &HomeAssistant::onStateChanged);
 
-    QObject::connect(m_wsReconnectTimer, SIGNAL(timeout()), this, SLOT(onTimeout()));
+    QObject::connect(m_wsReconnectTimer, &QTimer::timeout, this, &HomeAssistant::onTimeout);
 
     // set up timer to check heartbeat
     m_heartbeatTimer->setInterval(m_heartbeatCheckInterval);
@@ -126,6 +126,9 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
         QVariantList list = map.value("result").toList();
         for (int i = 0; i < list.length(); i++) {
             QVariantMap result = list.value(i).toMap();
+            // append the list of available entities
+            m_allAvailableEntities.append(result.value("entity_id").toString());
+
             updateEntity(result.value("entity_id").toString(), result);
         }
 
@@ -426,6 +429,10 @@ void HomeAssistant::disconnect() {
 
     // turn of the reconnect try
     m_wsReconnectTimer->stop();
+
+    // turn off heartbeat
+    m_heartbeatTimer->stop();
+    m_heartbeatTimeoutTimer->stop();
 
     // turn off the socket
     m_webSocket->close();
