@@ -34,11 +34,13 @@
 #include "yio-interface/entities/lightinterface.h"
 #include "yio-interface/entities/mediaplayerinterface.h"
 
-HomeAssistantPlugin::HomeAssistantPlugin() : Plugin("homeassistant", true) {}
+HomeAssistantPlugin::HomeAssistantPlugin() : Plugin("homeassistant", USE_WORKER_THREAD) {}
 
 Integration *HomeAssistantPlugin::createIntegration(const QVariantMap &config, EntitiesInterface *entities,
                                                     NotificationsInterface *notifications, YioAPIInterface *api,
                                                     ConfigInterface *configObj) {
+    qCInfo(m_logCategory) << "Creating HomeAssistant integration plugin" << PLUGIN_VERSION;
+
     return new HomeAssistant(config, entities, notifications, api, configObj, this);
 }
 
@@ -461,8 +463,7 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
             data.insert("rgb_color", list);
             webSocketSendCommand(type, "turn_on", entity_id, &data);
         }
-    }
-    if (type == "blind") {
+    } else if (type == "blind") {
         if (command == BlindDef::C_OPEN) {
             webSocketSendCommand("cover", "open_cover", entity_id, nullptr);
         } else if (command == BlindDef::C_CLOSE) {
@@ -474,8 +475,7 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
             data.insert("position", param);
             webSocketSendCommand("cover", "set_cover_position", entity_id, &data);
         }
-    }
-    if (type == "media_player") {
+    } else if (type == "media_player") {
         if (command == MediaPlayerDef::C_VOLUME_SET) {
             QVariantMap data;
             data.insert("volume_level", param.toDouble() / 100);
@@ -491,8 +491,7 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
         } else if (command == MediaPlayerDef::C_TURNOFF) {
             webSocketSendCommand(type, "turn_off", entity_id, nullptr);
         }
-    }
-    if (type == "climate") {
+    } else if (type == "climate") {
         if (command == ClimateDef::C_ON) {
             webSocketSendCommand(type, "turn_on", entity_id, nullptr);
         } else if (command == ClimateDef::C_OFF) {
