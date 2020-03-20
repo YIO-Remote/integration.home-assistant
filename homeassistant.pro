@@ -1,3 +1,7 @@
+# Plugin VERSION
+HA_VERSION = $$system(git describe --match "v[0-9]*" --tags HEAD --always)
+DEFINES += PLUGIN_VERSION=\\\"$$HA_VERSION\\\"
+
 TEMPLATE  = lib
 CONFIG   += c++14 plugin
 QT       += websockets core quick
@@ -19,6 +23,9 @@ isEmpty(INTG_LIB_PATH) {
     error( "Cannot find the yio-plugin-lib.pri file!" )
 }
 
+QMAKE_SUBSTITUTES += homeassistant.json.in
+# output path must be included for the output file from QMAKE_SUBSTITUTES
+INCLUDEPATH += $$OUT_PWD
 HEADERS  += src/homeassistant.h
 SOURCES  += src/homeassistant.cpp
 TARGET    = homeassistant
