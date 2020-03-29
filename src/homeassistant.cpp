@@ -99,7 +99,7 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
     }
     QVariantMap map = doc.toVariant().toMap();
 
-    QString m = map.value("error").toString();
+    QString m = map.value("error").toMap().value("message").toString();
     if (m.length() > 0) {
         qCCritical(m_logCategory) << "Message error:" << m;
     }
@@ -119,6 +119,14 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
         // FETCH STATES
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         m_webSocket->sendTextMessage("{\"id\": 2, \"type\": \"get_states\"}\n");
+    }
+
+    if (type == "auth_invalid") {
+        qCCritical(m_logCategory) << "Invalid authentication";
+        disconnect();
+        // try again after a couple of seconds
+        m_wsReconnectTimer->start();
+        return;
     }
 
     // FIXME magic number!
