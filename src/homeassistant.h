@@ -96,6 +96,7 @@ class HomeAssistant : public Integration {
     void updateBlind(EntityInterface* entity, const QVariantMap& attr);
     void updateMediaPlayer(EntityInterface* entity, const QVariantMap& attr);
     void updateClimate(EntityInterface* entity, const QVariantMap& attr);
+    void updateSwitch(EntityInterface* entity, const QVariantMap& attr);
 
     void onHeartbeat();
     void onHeartbeatTimeout();

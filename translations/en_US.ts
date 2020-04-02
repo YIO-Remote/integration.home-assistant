@@ -4,13 +4,13 @@
 <context>
     <name>HomeAssistant</name>
     <message>
-        <location filename="../src/homeassistant.cpp" line="194"/>
+        <location filename="../src/homeassistant.cpp" line="205"/>
         <source>Cannot connect to Home Assistant.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/homeassistant.cpp" line="532"/>
-        <source>Reconnect</source>
+        <location filename="../src/homeassistant.cpp" line="556"/>
+        <source>Connection lost to </source>
         <translation type="unfinished"></translation>
     </message>
 </context>
