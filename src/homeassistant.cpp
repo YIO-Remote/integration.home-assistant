@@ -33,6 +33,7 @@
 #include "yio-interface/entities/climateinterface.h"
 #include "yio-interface/entities/lightinterface.h"
 #include "yio-interface/entities/mediaplayerinterface.h"
+#include "yio-interface/entities/switchinterface.h"
 
 HomeAssistantPlugin::HomeAssistantPlugin() : Plugin("homeassistant", USE_WORKER_THREAD) {}
 
@@ -266,6 +267,9 @@ void HomeAssistant::updateEntity(const QString &entity_id, const QVariantMap &at
         if (entity->type() == "climate") {
             updateClimate(entity, attr);
         }
+        if (entity->type() == "switch") {
+            updateSwitch(entity, attr);
+        }
     }
 }
 
@@ -410,6 +414,15 @@ void HomeAssistant::updateClimate(EntityInterface *entity, const QVariantMap &at
     if (entity->isSupported(ClimateDef::F_TEMPERATURE_MIN) && attr.value("attributes").toMap().contains("min_temp")) {
         entity->updateAttrByIndex(ClimateDef::TEMPERATURE_MIN,
                                   attr.value("attributes").toMap().value("min_temp").toDouble());
+    }
+}
+
+void HomeAssistant::updateSwitch(EntityInterface *entity, const QVariantMap &attr) {
+    // state
+    if (attr.value("state").toString() == "on") {
+        entity->setState(SwitchDef::ON);
+    } else {
+        entity->setState(SwitchDef::OFF);
     }
 }
 
