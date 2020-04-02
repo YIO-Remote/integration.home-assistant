@@ -4,18 +4,18 @@
   <context>
     <name>HomeAssistant</name>
     <message>
-      <location filename="../src/homeassistant.cpp" line="194"/>
+      <location filename="../src/homeassistant.cpp" line="205"/>
       <source>Cannot connect to Home Assistant.</source>
       <translation>Negali prisijungti prie HA.</translation>
     </message>
     <message>
-      <location filename="../src/homeassistant.cpp" line="194"/>
-      <location filename="../src/homeassistant.cpp" line="532"/>
+      <location filename="../src/homeassistant.cpp" line="205"/>
+      <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Reconnect</source>
       <translation>Prisijungti Iš naujo</translation>
     </message>
     <message>
-      <location filename="../src/homeassistant.cpp" line="532"/>
+      <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
       <translation>Nutrūko ryšys </translation>
     </message>
