@@ -456,7 +456,9 @@ void HomeAssistant::disconnect() {
     m_heartbeatTimeoutTimer->stop();
 
     // turn off the socket
-    m_webSocket->close();
+    if (m_webSocket->isValid()) {
+        m_webSocket->close();
+    }
 
     setState(DISCONNECTED);
 }
