@@ -32,5 +32,9 @@
   \"dependencies\" : [
       { \"name\" : \"app\", \"version\" : \"0.2.0\" },
       { \"name\" : \"remoteOs\", \"version\" : \"0.2.0\" }
-  ]
+  ],
+  \"setup_data\": {
+    \"ip\": \"\",
+    \"token\": \"\"
+  }
 }
