@@ -196,20 +196,19 @@ void HomeAssistant::onError(QAbstractSocket::SocketError error) {
 
 void HomeAssistant::onTimeout() {
     if (m_tries == 3) {
-        m_wsReconnectTimer->stop();
+        disconnect();
 
         qCCritical(m_logCategory) << "Cannot connect to Home Assistant: retried 3 times connecting to" << m_ip;
         QObject *param = this;
 
         m_notifications->add(
-            true, tr("Cannot connect to Home Assistant."), tr("Reconnect"),
+            true, tr("Cannot connect to ").append(friendlyName()).append("."), tr("Reconnect"),
             [](QObject *param) {
                 Integration *i = qobject_cast<Integration *>(param);
                 i->connect();
             },
             param);
 
-        disconnect();
         m_tries = 0;
     } else {
         // FIXME magic number
