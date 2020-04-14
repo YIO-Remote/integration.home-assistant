@@ -2,16 +2,22 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="el" sourcelanguage="en">
   <context>
-    <name>HomeAssistantThread</name>
+    <name>HomeAssistant</name>
     <message>
-      <location filename="../homeassistant.cpp" line="257"/>
+      <location filename="../src/homeassistant.cpp" line="205"/>
       <source>Cannot connect to Home Assistant.</source>
-      <translation type="unfinished">Cannot connect to Home Assistant.</translation>
+      <translation>Αδύνατη σύνδεση με τον εξυπηρετητή.</translation>
     </message>
     <message>
-      <location filename="../homeassistant.cpp" line="257"/>
+      <location filename="../src/homeassistant.cpp" line="205"/>
+      <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Reconnect</source>
-      <translation type="unfinished">Reconnect</translation>
+      <translation>Επανασύνδεση</translation>
+    </message>
+    <message>
+      <location filename="../src/homeassistant.cpp" line="556"/>
+      <source>Connection lost to </source>
+      <translation>Απώλεια σύνδεσης </translation>
     </message>
   </context>
 </TS>

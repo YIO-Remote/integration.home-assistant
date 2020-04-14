@@ -1,24 +1,61 @@
-TEMPLATE        = lib
-CONFIG         += plugin
-QT             += websockets core quick
+TEMPLATE  = lib
+CONFIG   += c++14 plugin
+QT       += websockets core quick
 
-REMOTE_SRC = $$(YIO_SRC)
-isEmpty(REMOTE_SRC) {
-    REMOTE_SRC = $$clean_path($$PWD/../remote-software)
-    warning("Environment variables YIO_SR not defined! Using '$$REMOTE_SRC' for remote-software project.")
+# Plugin VERSION
+GIT_HASH = "$$system(git log -1 --format="%H")"
+GIT_BRANCH = "$$system(git rev-parse --abbrev-ref HEAD)"
+GIT_VERSION = "$$system(git describe --match "v[0-9]*" --tags HEAD --always)"
+HA_VERSION = $$replace(GIT_VERSION, v, "")
+DEFINES += PLUGIN_VERSION=\\\"$$HA_VERSION\\\"
+
+# build timestamp
+win32 {
+    # not the same format as on Unix systems, but good enough...
+    BUILDDATE=$$system(date /t)
 } else {
-    REMOTE_SRC = $$(YIO_SRC)/remote-software
-    message("YIO_SRC is set: using '$$REMOTE_SRC' for remote-software project.")
+    BUILDDATE=$$system(date +"%Y-%m-%dT%H:%M:%S")
+}
+CONFIG(debug, debug|release) {
+    DEBUG_BUILD = true
+} else {
+    DEBUG_BUILD = false
 }
 
-include($$REMOTE_SRC/qmake-target-platform.pri)
-include($$REMOTE_SRC/qmake-destination-path.pri)
+INTG_LIB_PATH = $$(YIO_SRC)
+isEmpty(INTG_LIB_PATH) {
+    INTG_LIB_PATH = $$clean_path($$PWD/../integrations.library)
+    message("Environment variables YIO_SRC not defined! Using '$$INTG_LIB_PATH' for integrations.library project.")
+} else {
+    INTG_LIB_PATH = $$(YIO_SRC)/integrations.library
+    message("YIO_SRC is set: using '$$INTG_LIB_PATH' for integrations.library project.")
+}
 
-HEADERS         = homeassistant.h \
-                  $$REMOTE_SRC/sources/integrations/integration.h \
-                  $$REMOTE_SRC/sources/integrations/plugininterface.h
-SOURCES         = homeassistant.cpp
-TARGET          = homeassistant
+! include($$INTG_LIB_PATH/qmake-destination-path.pri) {
+    error( "Couldn't find the qmake-destination-path.pri file!" )
+}
+
+! include($$INTG_LIB_PATH/yio-plugin-lib.pri) {
+    error( "Cannot find the yio-plugin-lib.pri file!" )
+}
+
+# verify integrations.library version
+unix {
+    INTG_LIB_VERSION = $$system(cat $$PWD/dependencies.cfg | awk '/^integrations.library:/$$system_quote("{print $2}")')
+    INTG_GIT_VERSION = "$$system(cd $$INTG_LIB_PATH && git describe --match "v[0-9]*" --tags HEAD --always)"
+    message("Required integrations.library version: $$INTG_LIB_VERSION Local version: $$INTG_GIT_VERSION")
+    # this is a simple check but qmake only provides limited tests and 'versionAtLeast' doesn't work with 'v' prefix.
+    !contains(INTG_GIT_VERSION, $$re_escape($${INTG_LIB_VERSION}).*) {
+        error("Invalid integrations.library version: \"$$INTG_GIT_VERSION\". Please check out required version \"$$INTG_LIB_VERSION\"")
+    }
+}
+
+QMAKE_SUBSTITUTES += homeassistant.json.in version.txt.in
+# output path must be included for the output file from QMAKE_SUBSTITUTES
+INCLUDEPATH += $$OUT_PWD
+HEADERS  += src/homeassistant.h
+SOURCES  += src/homeassistant.cpp
+TARGET    = homeassistant
 
 # Configure destination path. DESTDIR is set in qmake-destination-path.pri
 DESTDIR = $$DESTDIR/plugins
@@ -33,13 +70,19 @@ unix {
     INSTALLS += target
 }
 
+DISTFILES += \
+    dependencies.cfg \
+    homeassistant.json.in \
+    version.txt.in \
+    README.md
+
 # === start TRANSLATION section =======================================
 lupdate_only{
-SOURCES = homeassistant.h \
-          homeassistant.cpp
+SOURCES = src/homeassistant.cpp
 }
 
 TRANSLATIONS = translations/bg_BG.ts \
+               translations/ca_ES.ts \
                translations/cs_CZ.ts \
                translations/da_DK.ts \
                translations/de_DE.ts \
@@ -53,6 +96,7 @@ TRANSLATIONS = translations/bg_BG.ts \
                translations/ga_IE.ts \
                translations/hr_HR.ts \
                translations/hu_HU.ts \
+               translations/is_IS.ts \
                translations/it_IT.ts \
                translations/lt_LT.ts \
                translations/lv_LV.ts \
@@ -63,6 +107,26 @@ TRANSLATIONS = translations/bg_BG.ts \
                translations/pt_BR.ts \
                translations/pt_PT.ts \
                translations/ro_RO.ts \
+               translations/ru_BY.ts \
+               translations/ru_MD.ts \
+               translations/ru_RU.ts \
+               translations/ru_UA.ts \
                translations/sk_SK.ts \
                translations/sl_SI.ts \
-               translations/sv_SE.ts
+               translations/sv_SE.ts \
+               translations/zh_CN.ts \
+               translations/zh_TW.ts
+
+#QMAKE_LUPDATE & _LRELEASE vars are set in qmake-destiation-path.pri
+!isEmpty(QMAKE_LUPDATE):exists("$$QMAKE_LUPDATE") {
+    message("Using Qt linguist tools: '$$QMAKE_LUPDATE', '$$QMAKE_LRELEASE'")
+    command = $$QMAKE_LUPDATE homeassistant.pro
+    system($$command) | error("Failed to run: $$command")
+    command = $$QMAKE_LRELEASE homeassistant.pro
+    system($$command) | error("Failed to run: $$command")
+} else {
+    warning("Qt linguist cmd line tools lupdate / lrelease not found: translations will NOT be compiled and build will most likely fail due to missing .qm files!")
+}
+
+RESOURCES += \
+    translations.qrc

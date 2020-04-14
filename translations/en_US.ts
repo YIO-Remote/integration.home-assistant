@@ -2,15 +2,15 @@
 <!DOCTYPE TS>
 <TS version="2.1">
 <context>
-    <name>HomeAssistantThread</name>
+    <name>HomeAssistant</name>
     <message>
-        <location filename="../homeassistant.cpp" line="257"/>
+        <location filename="../src/homeassistant.cpp" line="205"/>
         <source>Cannot connect to Home Assistant.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../homeassistant.cpp" line="257"/>
-        <source>Reconnect</source>
+        <location filename="../src/homeassistant.cpp" line="556"/>
+        <source>Connection lost to </source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -2,16 +2,22 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu" sourcelanguage="en">
   <context>
-    <name>HomeAssistantThread</name>
+    <name>HomeAssistant</name>
     <message>
-      <location filename="../homeassistant.cpp" line="257"/>
+      <location filename="../src/homeassistant.cpp" line="205"/>
       <source>Cannot connect to Home Assistant.</source>
-      <translation>Sikertelen kapcsolódás a Home Assistanthoz.</translation>
+      <translation>Nem tud csatlkozni a Home Assistanthoz.</translation>
     </message>
     <message>
-      <location filename="../homeassistant.cpp" line="257"/>
+      <location filename="../src/homeassistant.cpp" line="205"/>
+      <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Reconnect</source>
       <translation>Újracsatlakozás</translation>
+    </message>
+    <message>
+      <location filename="../src/homeassistant.cpp" line="556"/>
+      <source>Connection lost to </source>
+      <translation>A kapcsolat megszakadt: </translation>
     </message>
   </context>
 </TS>
