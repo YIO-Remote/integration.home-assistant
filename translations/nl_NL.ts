@@ -9,12 +9,6 @@
       <translation>Verbinding maken met Home Assistant is mislukt.</translation>
     </message>
     <message>
-      <location filename="../src/homeassistant.cpp" line="205"/>
-      <location filename="../src/homeassistant.cpp" line="556"/>
-      <source>Reconnect</source>
-      <translation>Opnieuw verbinden</translation>
-    </message>
-    <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
       <translation>Verbinding verloren met </translation>

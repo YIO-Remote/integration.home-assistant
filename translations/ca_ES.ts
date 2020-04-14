@@ -9,12 +9,6 @@
       <translation>No es pot conectar amb el Home Assistant.</translation>
     </message>
     <message>
-      <location filename="../src/homeassistant.cpp" line="205"/>
-      <location filename="../src/homeassistant.cpp" line="556"/>
-      <source>Reconnect</source>
-      <translation>Reconnectar</translation>
-    </message>
-    <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
       <translation>Connexió perduda amb </translation>

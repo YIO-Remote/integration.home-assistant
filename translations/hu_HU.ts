@@ -9,12 +9,6 @@
       <translation>Nem tud csatlkozni a Home Assistanthoz.</translation>
     </message>
     <message>
-      <location filename="../src/homeassistant.cpp" line="205"/>
-      <location filename="../src/homeassistant.cpp" line="556"/>
-      <source>Reconnect</source>
-      <translation>Újracsatlakozás</translation>
-    </message>
-    <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
       <translation>A kapcsolat megszakadt: </translation>
