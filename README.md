@@ -1,4 +1,6 @@
-![Cross Compile](https://github.com/YIO-Remote/integration.home-assistant/workflows/Cross%20Compile/badge.svg?branch=develop) ![Code Guidelines](https://github.com/YIO-Remote/integration.home-assistant/workflows/Code%20Guidelines/badge.svg?branch=develop) ![QMake Build Matrix](https://github.com/YIO-Remote/integration.home-assistant/workflows/QMake%20Build%20Matrix/badge.svg?branch=develop)
+[![Cross Compile & Release](https://github.com/YIO-Remote/integration.home-assistant/workflows/Cross%20Compile%20&%20Release/badge.svg)](https://github.com/YIO-Remote/integration.home-assistant/actions?query=workflow%3A%22Cross+Compile+%26+Release%22)
+[![Code Guidelines](https://github.com/YIO-Remote/integration.home-assistant/workflows/Code%20Guidelines/badge.svg)](https://github.com/YIO-Remote/integration.home-assistant/actions?query=workflow%3A%22Code+Guidelines%22)
+[![Build Desktop Libraries](https://github.com/YIO-Remote/integration.home-assistant/workflows/Build%20Desktop%20Libraries/badge.svg)](https://github.com/YIO-Remote/integration.home-assistant/actions?query=workflow%3A%22Build+Desktop+Libraries%22)
 
 # YIO Home Assistant Repository
 
