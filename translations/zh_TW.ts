@@ -11,12 +11,12 @@
     <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
-      <translation type="unfinished">Connection lost to </translation>
+      <translation>連線中斷於 </translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
-      <translation type="unfinished">Connection lost to </translation>
+      <translation>連線中斷於 </translation>
     </message>
   </context>
 </TS>
