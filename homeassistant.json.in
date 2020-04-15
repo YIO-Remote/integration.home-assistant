@@ -52,7 +52,7 @@
     ],
     \"properties\": {
         \"ip\": {
-            \"$id\": \"#/properties/setup_data/properties/ip\",
+            \"$id\": \"#/properties/ip\",
             \"type\": \"string\",
             \"title\": \"The ip schema\",
             \"description\": \"The IP address and port of your Home Assistant server.\",
@@ -62,7 +62,7 @@
             ]
         },
         \"token\": {
-            \"$id\": \"#/properties/setup_data/properties/token\",
+            \"$id\": \"#/properties/token\",
             \"type\": \"string\",
             \"title\": \"The token schema\",
             \"description\": \"Long lived token generated from Home Assistant.\",
