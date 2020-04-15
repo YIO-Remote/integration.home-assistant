@@ -136,8 +136,21 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
         for (int i = 0; i < list.length(); i++) {
             QVariantMap result = list.value(i).toMap();
             // append the list of available entities
-            m_allAvailableEntities.append(result);
+            QString type = result.value("entity_id").toString().split(".")[0];
+            // rename type to match our own naming system
+            if (type == "cover") {
+                type = "blind";
+            }
+            // if the entity type is supported, put it in the allAvailableEntities list
+            if (m_entities->supported_entities().contains(type)) {
+                QVariantMap entity;
+                entity.insert("entity_id", result.value("entity_id").toString());
+                entity.insert("type", type);
+                entity.insert("integration_id", integrationId());
+                m_allAvailableEntities.append(entity);
+            }
 
+            // update the entity
             updateEntity(result.value("entity_id").toString(), result);
         }
 
