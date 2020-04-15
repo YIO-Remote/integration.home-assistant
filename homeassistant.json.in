@@ -34,7 +34,43 @@
       { \"name\" : \"remoteOS\", \"version\" : \"0.2.0\" }
   ],
   \"setup_data\": {
-    \"ip\": \"\",
-    \"token\": \"\"
+    \"$schema\": \"http://json-schema.org\",
+    \"$id\": \"http://yio-remote.com/homeassistant.json\",
+    \"type\": \"object\",
+    \"title\": \"YIO Integration Home Assistant Schema\",
+    \"description\": \"Required data points to set up a Home Assistant integrations.\",
+    \"default\": {},
+    \"additionalProperties\": true,
+    \"examples\": [
+        {
+            \"token\": \"\",
+            \"ip\": \"\"
+        }
+    ],
+    \"required\": [
+        \"ip\"
+    ],
+    \"properties\": {
+        \"ip\": {
+            \"$id\": \"#/properties/setup_data/properties/ip\",
+            \"type\": \"string\",
+            \"title\": \"The ip schema\",
+            \"description\": \"The IP address and port of your Home Assistant server.\",
+            \"default\": \"\",
+            \"examples\": [
+                \"192.168.100.2:8123\"
+            ]
+        },
+        \"token\": {
+            \"$id\": \"#/properties/setup_data/properties/token\",
+            \"type\": \"string\",
+            \"title\": \"The token schema\",
+            \"description\": \"Long lived token generated from Home Assistant.\",
+            \"default\": \"\",
+            \"examples\": [
+                \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiOjE0NDQyNjI1NDMsImV4cCI6MTQ0NDI2MjU2M30.MldruS1PvZaRZIJR4legQaauQ3_DYKxxP2rFnD37Ip4\"
+            ]
+        }
+    }
   }
 }
