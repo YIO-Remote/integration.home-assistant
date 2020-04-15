@@ -9,12 +9,6 @@
       <translation>Αδύνατη σύνδεση με τον εξυπηρετητή.</translation>
     </message>
     <message>
-      <location filename="../src/homeassistant.cpp" line="205"/>
-      <location filename="../src/homeassistant.cpp" line="556"/>
-      <source>Reconnect</source>
-      <translation>Επανασύνδεση</translation>
-    </message>
-    <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
       <translation>Απώλεια σύνδεσης </translation>
