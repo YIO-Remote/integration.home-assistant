@@ -136,7 +136,7 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
         for (int i = 0; i < list.length(); i++) {
             QVariantMap result = list.value(i).toMap();
             // append the list of available entities
-            m_allAvailableEntities.append(result.value("entity_id").toString());
+            m_allAvailableEntities.append(result);
 
             updateEntity(result.value("entity_id").toString(), result);
         }
