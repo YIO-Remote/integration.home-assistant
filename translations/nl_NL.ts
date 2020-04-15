@@ -16,7 +16,7 @@
     <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
-      <translation>Verbinding verloren met </translation>
+      <translation type="unfinished">Connection lost to </translation>
     </message>
   </context>
 </TS>
