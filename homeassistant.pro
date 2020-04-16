@@ -129,3 +129,6 @@ TRANSLATIONS = translations/bg_BG.ts \
 
 RESOURCES += \
     translations.qrc
+
+# Add setup schema to metadata
+CFG_SCHEMA = "$$cat($$PWD/homeassistant_schema.json)"
