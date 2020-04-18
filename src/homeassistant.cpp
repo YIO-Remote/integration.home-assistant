@@ -233,7 +233,7 @@ void HomeAssistant::onTimeout() {
     }
 }
 
-void HomeAssistant::webSocketSendCommand(const QString &domain, const QString &service, const QString &entity_id,
+void HomeAssistant::webSocketSendCommand(const QString &domain, const QString &service, const QString &entityId,
                                          QVariantMap *data) {
     // sends a command to home assistant
     m_webSocketId++;
@@ -246,10 +246,10 @@ void HomeAssistant::webSocketSendCommand(const QString &domain, const QString &s
 
     if (data == nullptr) {
         QVariantMap d;
-        d.insert("entity_id", QVariant(entity_id));
+        d.insert("entity_id", QVariant(entityId));
         map.insert("service_data", d);
     } else {
-        data->insert("entity_id", QVariant(entity_id));
+        data->insert("entity_id", QVariant(entityId));
         map.insert("service_data", *data);
     }
     QJsonDocument doc     = QJsonDocument::fromVariant(map);
