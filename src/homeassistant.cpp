@@ -141,14 +141,9 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
             if (type == "cover") {
                 type = "blind";
             }
-            // if the entity type is supported, put it in the allAvailableEntities list
-            if (m_entities->supported_entities().contains(type)) {
-                QVariantMap entity;
-                entity.insert("entity_id", result.value("entity_id").toString());
-                entity.insert("type", type);
-                entity.insert("integration_id", integrationId());
-                m_allAvailableEntities.append(entity);
-            }
+            // add entity to allAvailableEntities list
+            // TODO(marton): add friendly name and supported features
+            addAvailableEntity(result.value("entity_id").toString(), type, integrationId(), "", QStringList());
 
             // update the entity
             updateEntity(result.value("entity_id").toString(), result);
