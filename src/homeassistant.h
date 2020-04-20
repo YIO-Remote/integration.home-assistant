@@ -73,14 +73,14 @@ class HomeAssistant : public Integration {
     HomeAssistant(const QVariantMap& config, EntitiesInterface* entities, NotificationsInterface* notifications,
                   YioAPIInterface* api, ConfigInterface* configObj, Plugin* plugin);
 
-    Q_INVOKABLE void connect() override;
-    Q_INVOKABLE void disconnect() override;
-    Q_INVOKABLE void enterStandby() override;
-    Q_INVOKABLE void leaveStandby() override;
-    Q_INVOKABLE void sendCommand(const QString& type, const QString& entityId, int command,
-                                 const QVariant& param) override;
+    void sendCommand(const QString& type, const QString& entityId, int command, const QVariant& param) override;
 
  public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
+    void connect() override;
+    void disconnect() override;
+    void enterStandby() override;
+    void leaveStandby() override;
+
     void onTextMessageReceived(const QString& message);
     void onStateChanged(QAbstractSocket::SocketState state);
     void onError(QAbstractSocket::SocketError error);
