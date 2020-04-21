@@ -91,6 +91,7 @@ TRANSLATIONS = translations/bg_BG.ts \
                translations/es_ES.ts \
                translations/et_EE.ts \
                translations/fi_FI.ts \
+               translations/fr_CA.ts \
                translations/fr_FR.ts \
                translations/ga_IE.ts \
                translations/hr_HR.ts \
