@@ -6,18 +6,17 @@
     <message>
       <location filename="../src/homeassistant.cpp" line="205"/>
       <source>Cannot connect to Home Assistant.</source>
-      <translation type="unfinished">Cannot connect to Home Assistant.</translation>
-    </message>
-    <message>
-      <location filename="../src/homeassistant.cpp" line="205"/>
-      <location filename="../src/homeassistant.cpp" line="556"/>
-      <source>Reconnect</source>
-      <translation type="unfinished">Reconnect</translation>
+      <translation>無法連接到Home Assistant</translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
-      <translation type="unfinished">Connection lost to </translation>
+      <translation>連線中斷於 </translation>
+    </message>
+    <message>
+      <location filename="../src/homeassistant.cpp" line="556"/>
+      <source>Connection lost to </source>
+      <translation>連線中斷於 </translation>
     </message>
   </context>
 </TS>

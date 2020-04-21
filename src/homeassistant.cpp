@@ -136,8 +136,16 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
         for (int i = 0; i < list.length(); i++) {
             QVariantMap result = list.value(i).toMap();
             // append the list of available entities
-            m_allAvailableEntities.append(result.value("entity_id").toString());
+            QString type = result.value("entity_id").toString().split(".")[0];
+            // rename type to match our own naming system
+            if (type == "cover") {
+                type = "blind";
+            }
+            // add entity to allAvailableEntities list
+            // TODO(marton): add friendly name and supported features
+            addAvailableEntity(result.value("entity_id").toString(), type, integrationId(), "", QStringList());
 
+            // update the entity
             updateEntity(result.value("entity_id").toString(), result);
         }
 
@@ -225,7 +233,7 @@ void HomeAssistant::onTimeout() {
     }
 }
 
-void HomeAssistant::webSocketSendCommand(const QString &domain, const QString &service, const QString &entity_id,
+void HomeAssistant::webSocketSendCommand(const QString &domain, const QString &service, const QString &entityId,
                                          QVariantMap *data) {
     // sends a command to home assistant
     m_webSocketId++;
@@ -238,10 +246,10 @@ void HomeAssistant::webSocketSendCommand(const QString &domain, const QString &s
 
     if (data == nullptr) {
         QVariantMap d;
-        d.insert("entity_id", QVariant(entity_id));
+        d.insert("entity_id", QVariant(entityId));
         map.insert("service_data", d);
     } else {
-        data->insert("entity_id", QVariant(entity_id));
+        data->insert("entity_id", QVariant(entityId));
         map.insert("service_data", *data);
     }
     QJsonDocument doc     = QJsonDocument::fromVariant(map);

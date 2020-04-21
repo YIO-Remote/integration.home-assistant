@@ -9,15 +9,14 @@
       <translation>Negali prisijungti prie HA.</translation>
     </message>
     <message>
-      <location filename="../src/homeassistant.cpp" line="205"/>
       <location filename="../src/homeassistant.cpp" line="556"/>
-      <source>Reconnect</source>
-      <translation>Prisijungti Iš naujo</translation>
+      <source>Connection lost to </source>
+      <translation>Nutrūko ryšys </translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
-      <translation>Nutrūko ryšys </translation>
+      <translation type="unfinished">Connection lost to </translation>
     </message>
   </context>
 </TS>

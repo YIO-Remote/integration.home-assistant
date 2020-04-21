@@ -13,5 +13,10 @@
         <source>Connection lost to </source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../src/homeassistant.cpp" line="556"/>
+        <source>Connection lost to </source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>
