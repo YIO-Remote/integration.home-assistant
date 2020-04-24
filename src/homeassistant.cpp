@@ -28,6 +28,7 @@
 #include <QJsonDocument>
 #include <QtDebug>
 
+#include "homeassistant_supportedfeatures.h"
 #include "math.h"
 #include "yio-interface/entities/blindinterface.h"
 #include "yio-interface/entities/climateinterface.h"
@@ -143,7 +144,10 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
             }
             // add entity to allAvailableEntities list
             // TODO(marton): add friendly name and supported features
-            addAvailableEntity(result.value("entity_id").toString(), type, integrationId(), "", QStringList());
+            addAvailableEntity(
+                result.value("entity_id").toString(), type, integrationId(),
+                result.value("attributes").toMap().value("friendly_name").toString(),
+                supportedFeatures(type, result.value("attributes").toMap().value("supported_features").toInt()));
 
             // update the entity
             updateEntity(result.value("entity_id").toString(), result);
@@ -568,4 +572,74 @@ void HomeAssistant::onHeartbeatTimeout() {
             i->connect();
         },
         param);
+}
+
+QStringList HomeAssistant::supportedFeatures(const QString &entityType, const int &supportedFeatures) {
+    QStringList features;
+
+    if (entityType == "light") {
+        if (supportedFeatures & LightFeatures::SUPPORT_BRIGHTNESS) {
+            features.append("BRIGHTNESS");
+        } else if (supportedFeatures & LightFeatures::SUPPORT_COLOR) {
+            features.append("COLOR");
+        } else if (supportedFeatures & LightFeatures::SUPPORT_COLOR_TEMP) {
+            features.append("COLORTEMP");
+        }
+    } else if (entityType == "blind") {
+        if (supportedFeatures & BlindFeatures::SUPPORT_OPEN) {
+            features.append("OPEN");
+        } else if (supportedFeatures & BlindFeatures::SUPPORT_CLOSE) {
+            features.append("CLOSE");
+        } else if (supportedFeatures & BlindFeatures::SUPPORT_STOP) {
+            features.append("STOP");
+        } else if (supportedFeatures & BlindFeatures::SUPPORT_SET_POSITION) {
+            features.append("POSITION");
+        }
+    } else if (entityType == "climate") {
+        features.append("TEMPERATURE");
+        if (supportedFeatures & ClimateFeatures::SUPPORT_TARGET_TEMPERATURE) {
+            features.append("TARGET_TEMPERATURE");
+        }
+    } else if (entityType == "media_player") {
+        features.append("APP_NAME");
+        features.append("MEDIA_ALBUM");
+        features.append("MEDIA_ARTIST");
+        features.append("MEDIA_IMAGE");
+        features.append("MEDIA_TITLE");
+        features.append("MEDIA_TYPE");
+
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PAUSE) {
+            features.append("PAUSE");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SEEK) {
+            features.append("SEEK");
+            features.append("MEDIA_DURATION");
+            features.append("MEDIA_POSITION");
+            features.append("MEDIA_PROGRESS");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_SET) {
+            features.append("VOLUME_SET");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_MUTE) {
+            features.append("MUTE");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PREVIOUS_TRACK) {
+            features.append("PREVIOUS");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_NEXT_TRACK) {
+            features.append("NEXT");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_TURN_ON) {
+            features.append("TURN_ON");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_TURN_OFF) {
+            features.append("TURN_OFF");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_STEP) {
+            features.append("VOLUME_DOWN");
+            features.append("VOLUME_UP");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SELECT_SOURCE) {
+            features.append("SOURCE");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_STOP) {
+            features.append("STOP");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PLAY) {
+            features.append("PLAY");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SHUFFLE_SET) {
+            features.append("SHUFFLE");
+        }
+    }
+
+    return features;
 }

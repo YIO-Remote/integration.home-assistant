@@ -53,7 +53,8 @@ unix {
 QMAKE_SUBSTITUTES += homeassistant.json.in version.txt.in
 # output path must be included for the output file from QMAKE_SUBSTITUTES
 INCLUDEPATH += $$OUT_PWD
-HEADERS  += src/homeassistant.h
+HEADERS  += src/homeassistant.h \
+            src/homeassistant_supportedfeatures.h
 SOURCES  += src/homeassistant.cpp
 TARGET    = homeassistant
 

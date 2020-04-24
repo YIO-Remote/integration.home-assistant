@@ -32,6 +32,7 @@
 #include <QVariant>
 #include <QtWebSockets/QWebSocket>
 
+#include "homeassistant_supportedfeatures.h"
 #include "yio-interface/configinterface.h"
 #include "yio-interface/entities/entitiesinterface.h"
 #include "yio-interface/entities/entityinterface.h"
@@ -100,6 +101,11 @@ class HomeAssistant : public Integration {
 
     void onHeartbeat();
     void onHeartbeatTimeout();
+
+    /**
+     * @brief Returns a list of supported features converted from the Home Assistant format
+     */
+    QStringList supportedFeatures(const QString& entityType, const int& supportedFeatures);
 
  private:
     QString     m_ip;
