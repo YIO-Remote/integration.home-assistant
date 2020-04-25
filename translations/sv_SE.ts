@@ -6,17 +6,17 @@
     <message>
       <location filename="../src/homeassistant.cpp" line="205"/>
       <source>Cannot connect to Home Assistant.</source>
-      <translation type="unfinished">Cannot connect to Home Assistant.</translation>
+      <translation>Kan inte ansluta till Home Assistant.</translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
-      <translation type="unfinished">Connection lost to </translation>
+      <translation>Anslutningen avbröts mot </translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
-      <translation type="unfinished">Connection lost to </translation>
+      <translation>Anslutningen avbröts mot </translation>
     </message>
   </context>
 </TS>
