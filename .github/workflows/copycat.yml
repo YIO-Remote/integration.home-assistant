@@ -9,14 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Copycat
-      uses: andstor/copycat-action@v1.1.0
-      env:
-        DST_BRANCH: master
-        DST_OWNER: YIO-Remote
-        DST_REPO_NAME: translations
-        DST_PATH: integration.home-assistant/en_US.ts
-        GH_PAT: ${{ secrets.GH_TOKEN }}
-        SRC_BRANCH: master
-        SRC_PATH: translations/en_US.ts
-        USERNAME: Workflow
-        EMAIL: hello@yio-remote.com
+      uses: andstor/copycat-action@v3
+      with:
+        dst_branch: master
+        dst_owner: YIO-Remote
+        dst_repo_name: translations
+        dst_path: integration.home-assistant/en_US.ts
+        personal_token: ${{ secrets.GH_TOKEN }}
+        src_branch: master
+        src_path: translations/en_US.ts
+        username: Workflow
+        email: hello@yio-remote.com
