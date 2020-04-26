@@ -143,7 +143,6 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
                 type = "blind";
             }
             // add entity to allAvailableEntities list
-            // TODO(marton): add friendly name and supported features
             addAvailableEntity(
                 result.value("entity_id").toString(), type, integrationId(),
                 result.value("attributes").toMap().value("friendly_name").toString(),
