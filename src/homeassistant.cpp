@@ -549,6 +549,12 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
             data.insert("hvac_mode", "cool");
             webSocketSendCommand(type, "set_hvac_mode", entity_id, &data);
         }
+    } else if (type == "switch") {
+        if (command == SwitchDef::C_ON) {
+            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
+        } else if (command == SwitchDef::C_OFF) {
+            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
+        }
     }
 }
 
