@@ -10,7 +10,8 @@
     pull_request:
 
   env:
-    APP_NAME: libhomeassistant
+    APP_NAME: YIO-integration.home-assistant
+    APP_ARCHITECTURE: RPi0
     PROJECT_NAME: integration.home-assistant
 
   jobs:
@@ -21,21 +22,15 @@
         matrix:
           config:
           - {
-              name: "RPi0 Release Build", artifact: "remote-release",
+              name: "RPi0 Release Build", artifact: "RPi0-release",
               qmake-args: "CONFIG+=release"
             }
           - {
-              name: "RPi0 Debug Build", artifact: "remote-debug",
+              name: "RPi0 Debug Build", artifact: "RPi0-debug",
               qmake-args: "CONFIG+=debug CONFIG+=qml_debug"
             }
   
       steps:
-        - name: github env vars
-          run: |
-            echo "$GITHUB_REF"
-            echo "$GITHUB_HEAD_REF"
-            echo "$GITHUB_BASE_REF"
-  
         - name: Checkout ${{ env.PROJECT_NAME}}
           uses: actions/checkout@v2
           with:
@@ -77,24 +72,23 @@
         - name: Download release artifact
           uses: actions/download-artifact@v1
           with:
-            name: ${{ env.APP_NAME }}-remote-release
+            name: ${{ env.APP_NAME }}-${{ env.APP_ARCHITECTURE }}-release
             path: ./release
         - name: Download debug artifact
           uses: actions/download-artifact@v1
           with:
-            name: ${{ env.APP_NAME }}-remote-debug
+            name: ${{ env.APP_NAME }}-${{ env.APP_ARCHITECTURE }}-debug
             path: ./debug
         - name: Get artifact version
           run: |
             read -r APP_VERSION < release/version.txt
             echo "::set-env name=APP_VERSION::$APP_VERSION"
             echo "::set-env name=TIMESTAMP::$(date +"%Y%m%d_%H%M%S")"
-
-        - name: Create GitHub release archives
+        - name: Create GitHub development build archives
+          if: "!contains(github.ref, 'tags/v')"
           run: |
-            tar cvf ${{ env.APP_NAME }}-${{ env.APP_VERSION }}-${{ env.TIMESTAMP }}-remote-debug.tar -C debug .
-            tar cvf ${{ env.APP_NAME }}-${{ env.APP_VERSION }}-${{ env.TIMESTAMP }}-remote-release.tar -C release .
-
+            tar cvf ${{ env.APP_NAME }}-v${{ env.APP_VERSION }}-${{ env.TIMESTAMP }}-${{ env.APP_ARCHITECTURE }}-debug.tar -C debug .
+            tar cvf ${{ env.APP_NAME }}-v${{ env.APP_VERSION }}-${{ env.TIMESTAMP }}-${{ env.APP_ARCHITECTURE }}-release.tar -C release .
         - name: Create Pre-Release ${{ env.APP_VERSION }}
           uses: "marvinpinto/action-automatic-releases@latest"
           if: "!contains(github.ref, 'tags/v')"
@@ -105,7 +99,11 @@
             title: "Development Build ${{ env.APP_VERSION }}"
             files: |
                 *.tar
-
+        - name: Create GitHub release archives
+          if: "contains(github.ref, 'tags/v')"
+          run: |
+            tar cvf ${{ env.APP_NAME }}-v${{ env.APP_VERSION }}-${{ env.APP_ARCHITECTURE }}-debug.tar -C debug .
+            tar cvf ${{ env.APP_NAME }}-v${{ env.APP_VERSION }}-${{ env.APP_ARCHITECTURE }}-release.tar -C release .
         - name: Create Release ${{ env.APP_VERSION }}
           uses: "marvinpinto/action-automatic-releases@latest"
           if: "contains(github.ref, 'tags/v')"
