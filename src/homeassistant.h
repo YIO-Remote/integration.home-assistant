@@ -110,6 +110,8 @@ class HomeAssistant : public Integration {
  private:
     QString     m_ip;
     QString     m_token;
+    bool        m_ssl;
+    QString     m_url;
     QWebSocket* m_webSocket;
     QTimer*     m_wsReconnectTimer;
     int         m_tries;

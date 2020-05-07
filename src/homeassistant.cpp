@@ -59,6 +59,14 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
             QVariantMap map = iter.value().toMap();
             m_ip            = map.value(Integration::KEY_DATA_IP).toString();
             m_token         = map.value(Integration::KEY_DATA_TOKEN).toString();
+            //            m_ssl           = map.value(Integration::KEY_DATA_SSL).toBool();
+            m_ssl = map.value("ssl").toBool();
+
+            if (m_ssl) {
+                m_url = QString("wss://").append(m_ip).append("/api/websocket");
+            } else {
+                m_url = QString("ws://").append(m_ip).append("/api/websocket");
+            }
         }
     }
 
@@ -136,6 +144,7 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
         QVariantList list = map.value("result").toList();
         for (int i = 0; i < list.length(); i++) {
             QVariantMap result = list.value(i).toMap();
+
             // append the list of available entities
             QString type = result.value("entity_id").toString().split(".")[0];
             // rename type to match our own naming system
@@ -228,9 +237,8 @@ void HomeAssistant::onTimeout() {
             setState(CONNECTING);
         }
 
-        QString url = QString("ws://").append(m_ip).append("/api/websocket");
-        qCDebug(m_logCategory) << "Reconnection attempt" << m_tries + 1 << "to HomeAssistant server:" << url;
-        m_webSocket->open(QUrl(url));
+        qCDebug(m_logCategory) << "Reconnection attempt" << m_tries + 1 << "to HomeAssistant server:" << m_url;
+        m_webSocket->open(QUrl(m_url));
 
         m_tries++;
     }
@@ -449,9 +457,8 @@ void HomeAssistant::connect() {
         m_webSocket->close();
     }
 
-    QString url = QString("ws://").append(m_ip).append("/api/websocket");
-    qCDebug(m_logCategory) << "Connecting to HomeAssistant server:" << url;
-    m_webSocket->open(QUrl(url));
+    qCDebug(m_logCategory) << "Connecting to HomeAssistant server:" << m_url;
+    m_webSocket->open(QUrl(m_url));
 }
 
 void HomeAssistant::disconnect() {
