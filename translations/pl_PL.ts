@@ -6,17 +6,17 @@
     <message>
       <location filename="../src/homeassistant.cpp" line="205"/>
       <source>Cannot connect to Home Assistant.</source>
-      <translation type="unfinished">Cannot connect to Home Assistant.</translation>
+      <translation>Nie można połączyć się z Home Assistant.</translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
-      <translation type="unfinished">Connection lost to </translation>
+      <translation>Utracono połączenie z </translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="556"/>
       <source>Connection lost to </source>
-      <translation type="unfinished">Connection lost to </translation>
+      <translation>Utracono połączenie z </translation>
     </message>
   </context>
 </TS>
