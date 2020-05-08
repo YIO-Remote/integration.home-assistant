@@ -59,8 +59,7 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
             QVariantMap map = iter.value().toMap();
             m_ip            = map.value(Integration::KEY_DATA_IP).toString();
             m_token         = map.value(Integration::KEY_DATA_TOKEN).toString();
-            //            m_ssl           = map.value(Integration::KEY_DATA_SSL).toBool();
-            m_ssl = map.value("ssl").toBool();
+            m_ssl           = map.value(Integration::KEY_DATA_SSL).toBool();
 
             if (m_ssl) {
                 m_url = QString("wss://").append(m_ip).append("/api/websocket");
