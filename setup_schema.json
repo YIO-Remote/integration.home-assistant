@@ -9,11 +9,13 @@
     "examples": [
         {
             "token": "",
-            "ip": ""
+            "ip": "",
+            "ssl": false
         }
     ],
     "required": [
-        "ip"
+        "ip",
+        "ssl"
     ],
     "properties": {
         "ip": {
@@ -34,6 +36,16 @@
             "default": "",
             "examples": [
                 "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiVlx1MDAxNcKbwoNUwoonbFPCu8KhwrYiLCJpYXQiOjE0NDQyNjI1NDMsImV4cCI6MTQ0NDI2MjU2M30.MldruS1PvZaRZIJR4legQaauQ3_DYKxxP2rFnD37Ip4"
+            ]
+        },
+        "ssl": {
+            "$id": "#/properties/ssl",
+            "type": "boolean",
+            "title": "The ssl schema",
+            "description": "Set true if Home Assistant is using SSL",
+            "default": false,
+            "examples": [
+                false, true
             ]
         }
     }

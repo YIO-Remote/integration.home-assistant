@@ -28,6 +28,7 @@
 #include <QJsonDocument>
 #include <QtDebug>
 
+#include "homeassistant_supportedfeatures.h"
 #include "math.h"
 #include "yio-interface/entities/blindinterface.h"
 #include "yio-interface/entities/climateinterface.h"
@@ -58,6 +59,8 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
             QVariantMap map = iter.value().toMap();
             m_ip            = map.value(Integration::KEY_DATA_IP).toString();
             m_token         = map.value(Integration::KEY_DATA_TOKEN).toString();
+            m_ssl           = map.value(Integration::KEY_DATA_SSL).toBool();
+            m_url           = QString(m_ssl ? "wss://" : "ws://").append(m_ip).append("/api/websocket");
         }
     }
 
@@ -135,6 +138,7 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
         QVariantList list = map.value("result").toList();
         for (int i = 0; i < list.length(); i++) {
             QVariantMap result = list.value(i).toMap();
+
             // append the list of available entities
             QString type = result.value("entity_id").toString().split(".")[0];
             // rename type to match our own naming system
@@ -142,8 +146,10 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
                 type = "blind";
             }
             // add entity to allAvailableEntities list
-            // TODO(marton): add friendly name and supported features
-            addAvailableEntity(result.value("entity_id").toString(), type, integrationId(), "", QStringList());
+            addAvailableEntity(
+                result.value("entity_id").toString(), type, integrationId(),
+                result.value("attributes").toMap().value("friendly_name").toString(),
+                supportedFeatures(type, result.value("attributes").toMap().value("supported_features").toInt()));
 
             // update the entity
             updateEntity(result.value("entity_id").toString(), result);
@@ -225,9 +231,8 @@ void HomeAssistant::onTimeout() {
             setState(CONNECTING);
         }
 
-        QString url = QString("ws://").append(m_ip).append("/api/websocket");
-        qCDebug(m_logCategory) << "Reconnection attempt" << m_tries + 1 << "to HomeAssistant server:" << url;
-        m_webSocket->open(QUrl(url));
+        qCDebug(m_logCategory) << "Reconnection attempt" << m_tries + 1 << "to HomeAssistant server:" << m_url;
+        m_webSocket->open(QUrl(m_url));
 
         m_tries++;
     }
@@ -446,9 +451,8 @@ void HomeAssistant::connect() {
         m_webSocket->close();
     }
 
-    QString url = QString("ws://").append(m_ip).append("/api/websocket");
-    qCDebug(m_logCategory) << "Connecting to HomeAssistant server:" << url;
-    m_webSocket->open(QUrl(url));
+    qCDebug(m_logCategory) << "Connecting to HomeAssistant server:" << m_url;
+    m_webSocket->open(QUrl(m_url));
 }
 
 void HomeAssistant::disconnect() {
@@ -546,6 +550,12 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
             data.insert("hvac_mode", "cool");
             webSocketSendCommand(type, "set_hvac_mode", entity_id, &data);
         }
+    } else if (type == "switch") {
+        if (command == SwitchDef::C_ON) {
+            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
+        } else if (command == SwitchDef::C_OFF) {
+            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
+        }
     }
 }
 
@@ -568,4 +578,74 @@ void HomeAssistant::onHeartbeatTimeout() {
             i->connect();
         },
         param);
+}
+
+QStringList HomeAssistant::supportedFeatures(const QString &entityType, const int &supportedFeatures) {
+    QStringList features;
+
+    if (entityType == "light") {
+        if (supportedFeatures & LightFeatures::SUPPORT_BRIGHTNESS) {
+            features.append("BRIGHTNESS");
+        } else if (supportedFeatures & LightFeatures::SUPPORT_COLOR) {
+            features.append("COLOR");
+        } else if (supportedFeatures & LightFeatures::SUPPORT_COLOR_TEMP) {
+            features.append("COLORTEMP");
+        }
+    } else if (entityType == "blind") {
+        if (supportedFeatures & BlindFeatures::SUPPORT_OPEN) {
+            features.append("OPEN");
+        } else if (supportedFeatures & BlindFeatures::SUPPORT_CLOSE) {
+            features.append("CLOSE");
+        } else if (supportedFeatures & BlindFeatures::SUPPORT_STOP) {
+            features.append("STOP");
+        } else if (supportedFeatures & BlindFeatures::SUPPORT_SET_POSITION) {
+            features.append("POSITION");
+        }
+    } else if (entityType == "climate") {
+        features.append("TEMPERATURE");
+        if (supportedFeatures & ClimateFeatures::SUPPORT_TARGET_TEMPERATURE) {
+            features.append("TARGET_TEMPERATURE");
+        }
+    } else if (entityType == "media_player") {
+        features.append("APP_NAME");
+        features.append("MEDIA_ALBUM");
+        features.append("MEDIA_ARTIST");
+        features.append("MEDIA_IMAGE");
+        features.append("MEDIA_TITLE");
+        features.append("MEDIA_TYPE");
+
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PAUSE) {
+            features.append("PAUSE");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SEEK) {
+            features.append("SEEK");
+            features.append("MEDIA_DURATION");
+            features.append("MEDIA_POSITION");
+            features.append("MEDIA_PROGRESS");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_SET) {
+            features.append("VOLUME_SET");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_MUTE) {
+            features.append("MUTE");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PREVIOUS_TRACK) {
+            features.append("PREVIOUS");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_NEXT_TRACK) {
+            features.append("NEXT");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_TURN_ON) {
+            features.append("TURN_ON");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_TURN_OFF) {
+            features.append("TURN_OFF");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_STEP) {
+            features.append("VOLUME_DOWN");
+            features.append("VOLUME_UP");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SELECT_SOURCE) {
+            features.append("SOURCE");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_STOP) {
+            features.append("STOP");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PLAY) {
+            features.append("PLAY");
+        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SHUFFLE_SET) {
+            features.append("SHUFFLE");
+        }
+    }
+
+    return features;
 }
