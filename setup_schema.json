@@ -22,7 +22,7 @@
             "$id": "#/properties/ip",
             "type": "string",
             "title": "The ip schema",
-            "description": "The IP address and port of your Home Assistant server.",
+            "description": "The IP address or hostname and port of your Home Assistant server.",
             "default": "",
             "examples": [
                 "192.168.100.2:8123"
