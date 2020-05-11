@@ -586,19 +586,24 @@ QStringList HomeAssistant::supportedFeatures(const QString &entityType, const in
     if (entityType == "light") {
         if (supportedFeatures & LightFeatures::SUPPORT_BRIGHTNESS) {
             features.append("BRIGHTNESS");
-        } else if (supportedFeatures & LightFeatures::SUPPORT_COLOR) {
+        }
+        if (supportedFeatures & LightFeatures::SUPPORT_COLOR) {
             features.append("COLOR");
-        } else if (supportedFeatures & LightFeatures::SUPPORT_COLOR_TEMP) {
+        }
+        if (supportedFeatures & LightFeatures::SUPPORT_COLOR_TEMP) {
             features.append("COLORTEMP");
         }
     } else if (entityType == "blind") {
         if (supportedFeatures & BlindFeatures::SUPPORT_OPEN) {
             features.append("OPEN");
-        } else if (supportedFeatures & BlindFeatures::SUPPORT_CLOSE) {
+        }
+        if (supportedFeatures & BlindFeatures::SUPPORT_CLOSE) {
             features.append("CLOSE");
-        } else if (supportedFeatures & BlindFeatures::SUPPORT_STOP) {
+        }
+        if (supportedFeatures & BlindFeatures::SUPPORT_STOP) {
             features.append("STOP");
-        } else if (supportedFeatures & BlindFeatures::SUPPORT_SET_POSITION) {
+        }
+        if (supportedFeatures & BlindFeatures::SUPPORT_SET_POSITION) {
             features.append("POSITION");
         }
     } else if (entityType == "climate") {
@@ -616,36 +621,47 @@ QStringList HomeAssistant::supportedFeatures(const QString &entityType, const in
 
         if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PAUSE) {
             features.append("PAUSE");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SEEK) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SEEK) {
             features.append("SEEK");
             features.append("MEDIA_DURATION");
             features.append("MEDIA_POSITION");
             features.append("MEDIA_PROGRESS");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_SET) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_SET) {
             features.append("VOLUME_SET");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_MUTE) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_MUTE) {
             features.append("MUTE");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PREVIOUS_TRACK) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PREVIOUS_TRACK) {
             features.append("PREVIOUS");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_NEXT_TRACK) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_NEXT_TRACK) {
             features.append("NEXT");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_TURN_ON) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_TURN_ON) {
             features.append("TURN_ON");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_TURN_OFF) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_TURN_OFF) {
             features.append("TURN_OFF");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_STEP) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_VOLUME_STEP) {
             features.append("VOLUME_DOWN");
             features.append("VOLUME_UP");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SELECT_SOURCE) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SELECT_SOURCE) {
             features.append("SOURCE");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_STOP) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_STOP) {
             features.append("STOP");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PLAY) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_PLAY) {
             features.append("PLAY");
-        } else if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SHUFFLE_SET) {
+        }
+        if (supportedFeatures & MediaPlayerFeatures::SUPPORT_SHUFFLE_SET) {
             features.append("SHUFFLE");
         }
     }
-
     return features;
 }
