@@ -611,6 +611,10 @@ QStringList HomeAssistant::supportedFeatures(const QString &entityType, const in
         if (supportedFeatures & ClimateFeatures::SUPPORT_TARGET_TEMPERATURE) {
             features.append("TARGET_TEMPERATURE");
         }
+        if (supportedFeatures & ClimateFeatures::SUPPORT_TARGET_TEMPERATURE_RANGE) {
+            features.append("TEMPERATURE_MIN");
+            features.append("TEMPERATURE_MAX");
+        }
     } else if (entityType == "media_player") {
         features.append("APP_NAME");
         features.append("MEDIA_ALBUM");
