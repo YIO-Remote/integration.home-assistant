@@ -16,8 +16,7 @@
     ],
     "required": [
         "ip",
-        "ssl",
-        "ssl_ignore"
+        "ssl"
     ],
     "properties": {
         "ip": {
@@ -45,20 +44,14 @@
             "type": "boolean",
             "title": "The ssl schema",
             "description": "Set true if Home Assistant is using SSL",
-            "default": false,
-            "examples": [
-                false, true
-            ]
+            "default": false
         },
         "ssl_ignore": {
             "$id": "#/properties/ssl_ignore",
             "type": "boolean",
             "title": "The ssl_ignore schema",
             "description": "Set true if you want to skip SSL verification",
-            "default": false,
-            "examples": [
-                false, true
-            ]
+            "default": false
         }
     }
 }
