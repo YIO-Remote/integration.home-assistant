@@ -60,6 +60,7 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
             m_ip            = map.value(Integration::KEY_DATA_IP).toString();
             m_token         = map.value(Integration::KEY_DATA_TOKEN).toString();
             m_ssl           = map.value(Integration::KEY_DATA_SSL).toBool();
+            m_ignoreSsl     = map.value(Integration::KEY_DATA_SSL_IGNORE).toBool();
             m_url           = QString(m_ssl ? "wss://" : "ws://").append(m_ip).append("/api/websocket");
         }
     }
@@ -81,6 +82,7 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
     QObject::connect(m_webSocket, static_cast<void (QWebSocket::*)(QAbstractSocket::SocketError)>(&QWebSocket::error),
                      this, &HomeAssistant::onError);
     QObject::connect(m_webSocket, &QWebSocket::stateChanged, this, &HomeAssistant::onStateChanged);
+    QObject::connect(m_webSocket, &QWebSocket::sslErrors, this, &HomeAssistant::onSslError);
 
     QObject::connect(m_wsReconnectTimer, &QTimer::timeout, this, &HomeAssistant::onTimeout);
 
@@ -235,6 +237,18 @@ void HomeAssistant::onTimeout() {
         m_webSocket->open(QUrl(m_url));
 
         m_tries++;
+    }
+}
+
+void HomeAssistant::onSslError(QList<QSslError>) {
+    if (m_ignoreSsl) {
+        qCDebug(m_logCategory) << "Ignoring SSL errors.";
+        m_webSocket->ignoreSslErrors();
+    } else {
+        qCWarning(m_logCategory) << "SSL certificate error";
+        m_notifications->add(
+            true,
+            tr("SSL certificate validation error. Please check your certificate. ").append(friendlyName()).append("."));
     }
 }
 
