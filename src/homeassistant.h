@@ -86,6 +86,7 @@ class HomeAssistant : public Integration {
     void onStateChanged(QAbstractSocket::SocketState state);
     void onError(QAbstractSocket::SocketError error);
     void onTimeout();
+    void onSslError(QList<QSslError>);
 
  private:
     void webSocketSendCommand(const QString& domain, const QString& service, const QString& entity_id,
@@ -111,6 +112,7 @@ class HomeAssistant : public Integration {
     QString     m_ip;
     QString     m_token;
     bool        m_ssl;
+    bool        m_ignoreSsl;
     QString     m_url;
     QWebSocket* m_webSocket;
     QTimer*     m_wsReconnectTimer;

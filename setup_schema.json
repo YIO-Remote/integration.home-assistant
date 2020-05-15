@@ -10,12 +10,14 @@
         {
             "token": "",
             "ip": "",
-            "ssl": false
+            "ssl": false,
+            "ssl_ignore": false
         }
     ],
     "required": [
         "ip",
-        "ssl"
+        "ssl",
+        "ssl_ignore"
     ],
     "properties": {
         "ip": {
@@ -25,7 +27,7 @@
             "description": "The IP address or hostname and port of your Home Assistant server.",
             "default": "",
             "examples": [
-                "192.168.100.2:8123"
+                "192.168.100.2:8123", "yourdomain.com:8123"
             ]
         },
         "token": {
@@ -43,6 +45,16 @@
             "type": "boolean",
             "title": "The ssl schema",
             "description": "Set true if Home Assistant is using SSL",
+            "default": false,
+            "examples": [
+                false, true
+            ]
+        },
+        "ssl_ignore": {
+            "$id": "#/properties/ssl_ignore",
+            "type": "boolean",
+            "title": "The ssl_ignore schema",
+            "description": "Set true if you want to skip SSL verification",
             "default": false,
             "examples": [
                 false, true
