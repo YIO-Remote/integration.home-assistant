@@ -17,7 +17,7 @@
     <message>
       <location filename="../src/homeassistant.cpp" line="251"/>
       <source>SSL certificate validation error. Please check your certificate.</source>
-      <translation type="unfinished">SSL certificate validation error. Please check your certificate.</translation>
+      <translation>Blogas SSL sertifikatas. Prašau patikrinkite savo sertifikatą.</translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="589"/>
