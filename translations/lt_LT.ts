@@ -6,13 +6,13 @@
     <message>
       <location filename="../src/homeassistant.cpp" line="221"/>
       <source>Cannot connect to </source>
-      <translation type="unfinished">Cannot connect to </translation>
+      <translation>Negali prisijungti prie </translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="221"/>
       <location filename="../src/homeassistant.cpp" line="589"/>
       <source>Reconnect</source>
-      <translation type="unfinished">Reconnect</translation>
+      <translation>Prisijungti Iš naujo</translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="251"/>
