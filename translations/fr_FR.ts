@@ -12,7 +12,7 @@
       <location filename="../src/homeassistant.cpp" line="221"/>
       <location filename="../src/homeassistant.cpp" line="589"/>
       <source>Reconnect</source>
-      <translation>Reconnexion en cours</translation>
+      <translation>Se reconnecter</translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="251"/>
