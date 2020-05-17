@@ -14,7 +14,7 @@
         "ip": {
             "$id": "#/properties/ip",
             "type": "string",
-            "title": "IP address or hostname",
+            "title": "IP address or hostname and port",
             "description": "The IP address or hostname and port of your Home Assistant server.",
             "default": "",
             "examples": [
