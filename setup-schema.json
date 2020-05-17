@@ -6,14 +6,6 @@
     "description": "Required data points to set up a Home Assistant integrations.",
     "default": {},
     "additionalProperties": true,
-    "examples": [
-        {
-            "token": "",
-            "ip": "",
-            "ssl": false,
-            "ssl_ignore": false
-        }
-    ],
     "required": [
         "ip",
         "ssl"
@@ -22,7 +14,7 @@
         "ip": {
             "$id": "#/properties/ip",
             "type": "string",
-            "title": "The ip schema",
+            "title": "IP address or hostname",
             "description": "The IP address or hostname and port of your Home Assistant server.",
             "default": "",
             "examples": [
@@ -32,7 +24,7 @@
         "token": {
             "$id": "#/properties/token",
             "type": "string",
-            "title": "The token schema",
+            "title": "Access token",
             "description": "Long lived token generated from Home Assistant.",
             "default": "",
             "examples": [
@@ -42,14 +34,14 @@
         "ssl": {
             "$id": "#/properties/ssl",
             "type": "boolean",
-            "title": "The ssl schema",
+            "title": "Use SSL",
             "description": "Set true if Home Assistant is using SSL",
             "default": false
         },
         "ssl_ignore": {
             "$id": "#/properties/ssl_ignore",
             "type": "boolean",
-            "title": "The ssl_ignore schema",
+            "title": "Disable SSL verification",
             "description": "Set true if you want to skip SSL verification",
             "default": false
         }
