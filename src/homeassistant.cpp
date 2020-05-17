@@ -593,7 +593,9 @@ void HomeAssistant::onHeartbeat() {
     qCDebug(m_logCategory) << "Sending hearbeat request";
     m_webSocketId++;
     QString msg = QString("{ \"id\": \"%1\", \"type\": \"ping\" }\n").arg(m_webSocketId);
-    m_webSocket->sendTextMessage(msg);
+    if (m_webSocket->isValid()) {
+        m_webSocket->sendTextMessage(msg);
+    }
     m_heartbeatTimeoutTimer->start();
 }
 
