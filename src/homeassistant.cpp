@@ -146,6 +146,8 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
             // rename type to match our own naming system
             if (type == "cover") {
                 type = "blind";
+            } else if (type == "input_boolean") {
+                type = "switch";
             }
             // add entity to allAvailableEntities list
             addAvailableEntity(
@@ -565,10 +567,11 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
             webSocketSendCommand(type, "set_hvac_mode", entity_id, &data);
         }
     } else if (type == "switch") {
+        QString haType = entity_id.split(".")[0];
         if (command == SwitchDef::C_ON) {
-            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
+            webSocketSendCommand(haType, "turn_on", entity_id, nullptr);
         } else if (command == SwitchDef::C_OFF) {
-            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
+            webSocketSendCommand(haType, "turn_off", entity_id, nullptr);
         }
     }
 }
