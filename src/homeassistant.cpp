@@ -198,6 +198,14 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
 void HomeAssistant::onStateChanged(QAbstractSocket::SocketState state) {
     if (state == QAbstractSocket::UnconnectedState && !m_userDisconnect) {
         qCDebug(m_logCategory) << "State changed to 'Unconnected': starting reconnect";
+
+        // turn off heartbeat
+        m_heartbeatTimer->stop();
+        m_heartbeatTimeoutTimer->stop();
+
+        if (m_webSocket->isValid()) {
+            m_webSocket->close();
+        }
         setState(DISCONNECTED);
         m_wsReconnectTimer->start();
     }
@@ -205,6 +213,11 @@ void HomeAssistant::onStateChanged(QAbstractSocket::SocketState state) {
 
 void HomeAssistant::onError(QAbstractSocket::SocketError error) {
     qCWarning(m_logCategory) << error << m_webSocket->errorString();
+
+    // turn off heartbeat
+    m_heartbeatTimer->stop();
+    m_heartbeatTimeoutTimer->stop();
+
     if (m_webSocket->isValid()) {
         m_webSocket->close();
     }
