@@ -35,6 +35,7 @@
 #include "yio-interface/entities/lightinterface.h"
 #include "yio-interface/entities/mediaplayerinterface.h"
 #include "yio-interface/entities/switchinterface.h"
+#include "yio-interface/entities/remoteinterface.h"
 
 HomeAssistantPlugin::HomeAssistantPlugin() : Plugin("homeassistant", USE_WORKER_THREAD) {}
 
@@ -586,7 +587,31 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
         } else if (command == SwitchDef::C_OFF) {
             webSocketSendCommand(haType, "turn_off", entity_id, nullptr);
         }
+    } else if (type == "remote") {
+        EntityInterface *entity = m_entities->getEntityInterface(entity_id);
+        RemoteInterface *remoteInterface = static_cast<RemoteInterface *>(entity->getSpecificInterface());
+        QVariantList commands = remoteInterface->commands();
+        QStringList remoteCodes = findRemoteCodes(entity->getCommandName(command), commands);
+
+        if (remoteCodes.length() > 0) {
+            QVariantMap data;
+            data.insert("command", remoteCodes);
+            webSocketSendCommand(type, "send_command", entity_id, &data);
+        }
     }
+}
+
+QStringList HomeAssistant::findRemoteCodes(const QString &feature, const QVariantList &list) {
+    QStringList r;
+
+    for (int i = 0; i < list.length(); i++) {
+        QVariantMap map = list[i].toMap();
+        if (map.value("button_map").toString() == feature) {
+            r += map.value("code").toString().split(',');
+        }
+    }
+
+    return r;
 }
 
 void HomeAssistant::onHeartbeat() {
