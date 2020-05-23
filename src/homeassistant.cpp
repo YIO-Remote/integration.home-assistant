@@ -363,7 +363,7 @@ void HomeAssistant::updateBlind(EntityInterface *entity, const QVariantMap &attr
     // position
     if (entity->isSupported(BlindDef::F_POSITION)) {
         entity->updateAttrByIndex(BlindDef::POSITION,
-                                  attr.value("attributes").toMap().value("current_position").toInt());
+                                  100 - attr.value("attributes").toMap().value("current_position").toInt());
     }
 }
 
