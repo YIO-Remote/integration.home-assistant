@@ -43,10 +43,13 @@ isEmpty(INTG_LIB_PATH) {
 unix {
     INTG_LIB_VERSION = $$system(cat $$PWD/dependencies.cfg | awk '/^integrations.library:/$$system_quote("{print $2}")')
     INTG_GIT_VERSION = "$$system(cd $$INTG_LIB_PATH && git describe --match "v[0-9]*" --tags HEAD --always)"
-    message("Required integrations.library version: $$INTG_LIB_VERSION Local version: $$INTG_GIT_VERSION")
+    INTG_GIT_BRANCH  = "$$system(cd $$INTG_LIB_PATH && git rev-parse --abbrev-ref HEAD)"
+    message("Required integrations.library version: $$INTG_LIB_VERSION Local version: $$INTG_GIT_VERSION ($$INTG_GIT_BRANCH)")
     # this is a simple check but qmake only provides limited tests and 'versionAtLeast' doesn't work with 'v' prefix.
-    !contains(INTG_GIT_VERSION, $$re_escape($${INTG_LIB_VERSION}).*) {
-        error("Invalid integrations.library version: \"$$INTG_GIT_VERSION\". Please check out required version \"$$INTG_LIB_VERSION\"")
+    !contains(INTG_GIT_VERSION, $$re_escape($${INTG_LIB_VERSION}).*)) {
+        !equals(INTG_GIT_BRANCH, $$INTG_LIB_VERSION) {
+            error("Invalid integrations.library version: \"$$INTG_GIT_VERSION\". Please check out required version \"$$INTG_LIB_VERSION\"")
+        }
     }
 }
 
