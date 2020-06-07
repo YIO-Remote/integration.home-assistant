@@ -4,23 +4,23 @@
   <context>
     <name>HomeAssistant</name>
     <message>
-      <location filename="../src/homeassistant.cpp" line="221"/>
+      <location filename="../src/homeassistant.cpp" line="237"/>
       <source>Cannot connect to </source>
       <translation>Kan geen verbinding maken met </translation>
     </message>
     <message>
-      <location filename="../src/homeassistant.cpp" line="221"/>
-      <location filename="../src/homeassistant.cpp" line="589"/>
+      <location filename="../src/homeassistant.cpp" line="237"/>
+      <location filename="../src/homeassistant.cpp" line="632"/>
       <source>Reconnect</source>
       <translation>Opnieuw verbinden</translation>
     </message>
     <message>
-      <location filename="../src/homeassistant.cpp" line="251"/>
-      <source>SSL certificate validation error. Please check your certificate.</source>
-      <translation>SSL certificaat validatiefout. Controleer uw certificaat.</translation>
+      <location filename="../src/homeassistant.cpp" line="267"/>
+      <source>SSL certificate validation error. Please check your certificate. </source>
+      <translation type="unfinished">SSL certificate validation error. Please check your certificate. </translation>
     </message>
     <message>
-      <location filename="../src/homeassistant.cpp" line="589"/>
+      <location filename="../src/homeassistant.cpp" line="632"/>
       <source>Connection lost to </source>
       <translation>Verbinding verloren met </translation>
     </message>
