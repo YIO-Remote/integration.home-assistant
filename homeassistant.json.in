@@ -30,8 +30,8 @@
   ],
   \"url\": \"https://github.com/YIO-Remote/integration.home-assistant\",
   \"dependencies\" : [
-      { \"name\" : \"app\", \"version\" : \"0.2.0\" },
-      { \"name\" : \"remoteOS\", \"version\" : \"0.2.0\" }
+      { \"name\" : \"app\", \"version\" : \"0.5.0\" },
+      { \"name\" : \"remoteOS\", \"version\" : \"0.4.0\" }
   ],
   \"mdns\": \"_home-assistant._tcp\",
   \"setup_data\": $$CFG_SCHEMA
