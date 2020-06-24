@@ -12,7 +12,8 @@
       <location filename="../src/homeassistant.cpp" line="237"/>
       <location filename="../src/homeassistant.cpp" line="632"/>
       <source>Reconnect</source>
-      <translation>Yhdistä uudelleen</translation>
+      <translation>Yhdistä
+uudelleen</translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="267"/>
