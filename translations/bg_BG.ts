@@ -6,18 +6,18 @@
     <message>
       <location filename="../src/homeassistant.cpp" line="237"/>
       <source>Cannot connect to </source>
-      <translation type="unfinished">Cannot connect to </translation>
+      <translation>Не може да се свърже с </translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="237"/>
       <location filename="../src/homeassistant.cpp" line="632"/>
       <source>Reconnect</source>
-      <translation type="unfinished">Reconnect</translation>
+      <translation>Повторно свързване</translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="267"/>
       <source>SSL certificate validation error. Please check your certificate. </source>
-      <translation type="unfinished">SSL certificate validation error. Please check your certificate. </translation>
+      <translation>Грешка при проверка на сертификата SSL. Проверете си сертификата. </translation>
     </message>
     <message>
       <location filename="../src/homeassistant.cpp" line="632"/>
