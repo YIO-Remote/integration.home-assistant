@@ -104,6 +104,7 @@ class HomeAssistant : public Integration {
     void onHeartbeatTimeout();
 
     QStringList findRemoteCodes(const QString &feature, const QVariantList &list);
+    QString findRemoteDevice(const QString &feature, const QVariantList &list);
 
     /**
      * @brief Returns a list of supported features converted from the Home Assistant format
