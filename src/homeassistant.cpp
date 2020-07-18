@@ -597,7 +597,7 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
         if (remoteCodes.length() > 0) {
             QVariantMap data;
 
-            if(remoteDevice.length() > 0) {
+            if (remoteDevice.length() > 0) {
                 data.insert("device", remoteDevice);
             }
 
@@ -608,16 +608,15 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
 }
 
 QString HomeAssistant::findRemoteDevice(const QString &feature, const QVariantList &list) {
-    QString r;
 
     for (int i = 0; i < list.length(); i++) {
         QVariantMap map = list[i].toMap();
         if (map.value("button_map").toString() == feature) {
-            r += map.value("device").toString();
+            return map.value("device").toString();
         }
     }
 
-    return r;
+    return "";
 }
 
 QStringList HomeAssistant::findRemoteCodes(const QString &feature, const QVariantList &list) {
