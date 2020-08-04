@@ -608,7 +608,6 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
 }
 
 QString HomeAssistant::findRemoteDevice(const QString &feature, const QVariantList &list) {
-
     for (int i = 0; i < list.length(); i++) {
         QVariantMap map = list[i].toMap();
         if (map.value("button_map").toString() == feature) {
