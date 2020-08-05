@@ -592,13 +592,30 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
         RemoteInterface *remoteInterface = static_cast<RemoteInterface *>(entity->getSpecificInterface());
         QVariantList commands = remoteInterface->commands();
         QStringList remoteCodes = findRemoteCodes(entity->getCommandName(command), commands);
+        QString remoteDevice = findRemoteDevice(entity->getCommandName(command), commands);
 
         if (remoteCodes.length() > 0) {
             QVariantMap data;
+
+            if (remoteDevice.length() > 0) {
+                data.insert("device", remoteDevice);
+            }
+
             data.insert("command", remoteCodes);
             webSocketSendCommand(type, "send_command", entity_id, &data);
         }
     }
+}
+
+QString HomeAssistant::findRemoteDevice(const QString &feature, const QVariantList &list) {
+    for (int i = 0; i < list.length(); i++) {
+        QVariantMap map = list[i].toMap();
+        if (map.value("button_map").toString() == feature) {
+            return map.value("device").toString();
+        }
+    }
+
+    return "";
 }
 
 QStringList HomeAssistant::findRemoteCodes(const QString &feature, const QVariantList &list) {
