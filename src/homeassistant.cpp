@@ -297,7 +297,7 @@ int HomeAssistant::convertBrightnessToPercentage(float value) { return static_ca
 void HomeAssistant::updateEntity(const QString &entity_id, const QVariantMap &attr) {
     QList<EntityInterface*> entities = m_entities->getByIntegration(integrationId());
 
-    foreach (EntityInterface *entity, entities) {
+    foreach(EntityInterface *entity, entities) {
         if (entity->entity_id().startsWith(entity_id)) {
             if (entity->type() == "light") {
                 updateLight(entity, attr);
