@@ -295,25 +295,22 @@ void HomeAssistant::webSocketSendCommand(const QString &domain, const QString &s
 int HomeAssistant::convertBrightnessToPercentage(float value) { return static_cast<int>(round(value / 255 * 100)); }
 
 void HomeAssistant::updateEntity(const QString &entity_id, const QVariantMap &attr) {
-    QList<EntityInterface*> entities = m_entities->getByIntegration(integrationId());
-
-    foreach(EntityInterface *entity, entities) {
-        if (entity->entity_id().startsWith(entity_id)) {
-            if (entity->type() == "light") {
-                updateLight(entity, attr);
-            }
-            if (entity->type() == "blind") {
-                updateBlind(entity, attr);
-            }
-            if (entity->type() == "media_player") {
-                updateMediaPlayer(entity, attr);
-            }
-            if (entity->type() == "climate") {
-                updateClimate(entity, attr);
-            }
-            if (entity->type() == "switch") {
-                updateSwitch(entity, attr);
-            }
+    EntityInterface *entity = m_entities->getEntityInterface(entity_id);
+    if (entity) {
+        if (entity->type() == "light") {
+            updateLight(entity, attr);
+        }
+        if (entity->type() == "blind") {
+            updateBlind(entity, attr);
+        }
+        if (entity->type() == "media_player") {
+            updateMediaPlayer(entity, attr);
+        }
+        if (entity->type() == "climate") {
+            updateClimate(entity, attr);
+        }
+        if (entity->type() == "switch") {
+            updateSwitch(entity, attr);
         }
     }
 }
@@ -516,19 +513,17 @@ void HomeAssistant::enterStandby() {
 void HomeAssistant::leaveStandby() { m_heartbeatTimer->start(); }
 
 void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, int command, const QVariant &param) {
-    const QString ha_entity_id = entity_id.left(entity_id.indexOf('+'));
-
     if (type == "light") {
         if (command == LightDef::C_TOGGLE) {
-            webSocketSendCommand(type, "toggle", ha_entity_id, nullptr);
+            webSocketSendCommand(type, "toggle", entity_id, nullptr);
         } else if (command == LightDef::C_ON) {
-            webSocketSendCommand(type, "turn_on", ha_entity_id, nullptr);
+            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
         } else if (command == LightDef::C_OFF) {
-            webSocketSendCommand(type, "turn_off", ha_entity_id, nullptr);
+            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
         } else if (command == LightDef::C_BRIGHTNESS) {
             QVariantMap data;
             data.insert("brightness_pct", param);
-            webSocketSendCommand(type, "turn_on", ha_entity_id, &data);
+            webSocketSendCommand(type, "turn_on", entity_id, &data);
         } else if (command == LightDef::C_COLOR) {
             QColor       color = param.value<QColor>();
             QVariantMap  data;
@@ -537,60 +532,60 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
             list.append(color.green());
             list.append(color.blue());
             data.insert("rgb_color", list);
-            webSocketSendCommand(type, "turn_on", ha_entity_id, &data);
+            webSocketSendCommand(type, "turn_on", entity_id, &data);
         }
     } else if (type == "blind") {
         if (command == BlindDef::C_OPEN) {
-            webSocketSendCommand("cover", "open_cover", ha_entity_id, nullptr);
+            webSocketSendCommand("cover", "open_cover", entity_id, nullptr);
         } else if (command == BlindDef::C_CLOSE) {
-            webSocketSendCommand("cover", "close_cover", ha_entity_id, nullptr);
+            webSocketSendCommand("cover", "close_cover", entity_id, nullptr);
         } else if (command == BlindDef::C_STOP) {
-            webSocketSendCommand("cover", "stop_cover", ha_entity_id, nullptr);
+            webSocketSendCommand("cover", "stop_cover", entity_id, nullptr);
         } else if (command == BlindDef::C_POSITION) {
             QVariantMap data;
             data.insert("position", param);
-            webSocketSendCommand("cover", "set_cover_position", ha_entity_id, &data);
+            webSocketSendCommand("cover", "set_cover_position", entity_id, &data);
         }
     } else if (type == "media_player") {
         if (command == MediaPlayerDef::C_VOLUME_SET) {
             QVariantMap data;
             data.insert("volume_level", param.toDouble() / 100);
-            webSocketSendCommand(type, "volume_set", ha_entity_id, &data);
+            webSocketSendCommand(type, "volume_set", entity_id, &data);
         } else if (command == MediaPlayerDef::C_PLAY || command == MediaPlayerDef::C_PAUSE) {
-            webSocketSendCommand(type, "media_play_pause", ha_entity_id, nullptr);
+            webSocketSendCommand(type, "media_play_pause", entity_id, nullptr);
         } else if (command == MediaPlayerDef::C_PREVIOUS) {
-            webSocketSendCommand(type, "media_previous_track", ha_entity_id, nullptr);
+            webSocketSendCommand(type, "media_previous_track", entity_id, nullptr);
         } else if (command == MediaPlayerDef::C_NEXT) {
-            webSocketSendCommand(type, "media_next_track", ha_entity_id, nullptr);
+            webSocketSendCommand(type, "media_next_track", entity_id, nullptr);
         } else if (command == MediaPlayerDef::C_TURNON) {
-            webSocketSendCommand(type, "turn_on", ha_entity_id, nullptr);
+            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
         } else if (command == MediaPlayerDef::C_TURNOFF) {
-            webSocketSendCommand(type, "turn_off", ha_entity_id, nullptr);
+            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
         }
     } else if (type == "climate") {
         if (command == ClimateDef::C_ON) {
-            webSocketSendCommand(type, "turn_on", ha_entity_id, nullptr);
+            webSocketSendCommand(type, "turn_on", entity_id, nullptr);
         } else if (command == ClimateDef::C_OFF) {
-            webSocketSendCommand(type, "turn_off", ha_entity_id, nullptr);
+            webSocketSendCommand(type, "turn_off", entity_id, nullptr);
         } else if (command == ClimateDef::C_TARGET_TEMPERATURE) {
             QVariantMap data;
             data.insert("temperature", param.toDouble());
-            webSocketSendCommand(type, "set_temperature", ha_entity_id, &data);
+            webSocketSendCommand(type, "set_temperature", entity_id, &data);
         } else if (command == ClimateDef::C_HEAT) {
             QVariantMap data;
             data.insert("hvac_mode", "heat");
-            webSocketSendCommand(type, "set_hvac_mode", ha_entity_id, &data);
+            webSocketSendCommand(type, "set_hvac_mode", entity_id, &data);
         } else if (command == ClimateDef::C_COOL) {
             QVariantMap data;
             data.insert("hvac_mode", "cool");
-            webSocketSendCommand(type, "set_hvac_mode", ha_entity_id, &data);
+            webSocketSendCommand(type, "set_hvac_mode", entity_id, &data);
         }
     } else if (type == "switch") {
-        QString haType = ha_entity_id.split(".")[0];
+        QString haType = entity_id.split(".")[0];
         if (command == SwitchDef::C_ON) {
-            webSocketSendCommand(haType, "turn_on", ha_entity_id, nullptr);
+            webSocketSendCommand(haType, "turn_on", entity_id, nullptr);
         } else if (command == SwitchDef::C_OFF) {
-            webSocketSendCommand(haType, "turn_off", ha_entity_id, nullptr);
+            webSocketSendCommand(haType, "turn_off", entity_id, nullptr);
         }
     } else if (type == "remote") {
         EntityInterface *entity = m_entities->getEntityInterface(entity_id);
@@ -601,6 +596,7 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
 
         if (remoteCodes.length() > 0) {
             QVariantMap data;
+            const QString ha_entity_id = entity_id.left(entity_id.indexOf('+'));
 
             if (remoteDevice.length() > 0) {
                 data.insert("device", remoteDevice);
