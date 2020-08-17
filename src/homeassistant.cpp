@@ -596,13 +596,14 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
 
         if (remoteCodes.length() > 0) {
             QVariantMap data;
+            const QString ha_entity_id = entity_id.left(entity_id.indexOf('+'));
 
             if (remoteDevice.length() > 0) {
                 data.insert("device", remoteDevice);
             }
 
             data.insert("command", remoteCodes);
-            webSocketSendCommand(type, "send_command", entity_id, &data);
+            webSocketSendCommand(type, "send_command", ha_entity_id, &data);
         }
     }
 }
