@@ -55,7 +55,7 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
                              NotificationsInterface *notifications, YioAPIInterface *api, ConfigInterface *configObj,
                              Plugin *plugin)
     : Integration(config, entities, notifications, api, configObj, plugin) {
-    for (QVariantMap::const_iterator iter = config.begin(); iter != config.end(); ++iter) {
+    for (QVariantMap::const_iterator iter = config.cbegin(); iter != config.cend(); ++iter) {
         if (iter.key() == Integration::OBJ_DATA) {
             QVariantMap map = iter.value().toMap();
             m_ip            = map.value(Integration::KEY_DATA_IP).toString();
