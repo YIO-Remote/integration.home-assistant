@@ -103,8 +103,8 @@ class HomeAssistant : public Integration {
     void onHeartbeat();
     void onHeartbeatTimeout();
 
-    QStringList findRemoteCodes(const QString &feature, const QVariantList &list);
-    QString findRemoteDevice(const QString &feature, const QVariantList &list);
+    QStringList findRemoteCodes(const QString& feature, const QVariantList& list);
+    QString     findRemoteDevice(const QString& feature, const QVariantList& list);
 
     /**
      * @brief Returns a list of supported features converted from the Home Assistant format
@@ -121,8 +121,8 @@ class HomeAssistant : public Integration {
     QTimer*     m_wsReconnectTimer;
     int         m_tries;
     int         m_webSocketId;
-    bool        m_userDisconnect         = false;
+    bool        m_userDisconnect = false;
     int         m_heartbeatCheckInterval = 30000;
-    QTimer*     m_heartbeatTimer         = new QTimer(this);
-    QTimer*     m_heartbeatTimeoutTimer  = new QTimer(this);
+    QTimer*     m_heartbeatTimer = new QTimer(this);
+    QTimer*     m_heartbeatTimeoutTimer = new QTimer(this);
 };
