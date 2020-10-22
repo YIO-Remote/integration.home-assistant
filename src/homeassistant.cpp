@@ -34,10 +34,10 @@
 #include "yio-interface/entities/climateinterface.h"
 #include "yio-interface/entities/lightinterface.h"
 #include "yio-interface/entities/mediaplayerinterface.h"
-#include "yio-interface/entities/switchinterface.h"
 #include "yio-interface/entities/remoteinterface.h"
+#include "yio-interface/entities/switchinterface.h"
 
-HomeAssistantPlugin::HomeAssistantPlugin() : Plugin("homeassistant", USE_WORKER_THREAD) {}
+HomeAssistantPlugin::HomeAssistantPlugin() : Plugin("yio.dock.homeassistant", USE_WORKER_THREAD) {}
 
 Integration *HomeAssistantPlugin::createIntegration(const QVariantMap &config, EntitiesInterface *entities,
                                                     NotificationsInterface *notifications, YioAPIInterface *api,
@@ -58,11 +58,11 @@ HomeAssistant::HomeAssistant(const QVariantMap &config, EntitiesInterface *entit
     for (QVariantMap::const_iterator iter = config.cbegin(); iter != config.cend(); ++iter) {
         if (iter.key() == Integration::OBJ_DATA) {
             QVariantMap map = iter.value().toMap();
-            m_ip            = map.value(Integration::KEY_DATA_IP).toString();
-            m_token         = map.value(Integration::KEY_DATA_TOKEN).toString();
-            m_ssl           = map.value(Integration::KEY_DATA_SSL).toBool();
-            m_ignoreSsl     = map.value(Integration::KEY_DATA_SSL_IGNORE).toBool();
-            m_url           = QString(m_ssl ? "wss://" : "ws://").append(m_ip).append("/api/websocket");
+            m_ip = map.value(Integration::KEY_DATA_IP).toString();
+            m_token = map.value(Integration::KEY_DATA_TOKEN).toString();
+            m_ssl = map.value(Integration::KEY_DATA_SSL).toBool();
+            m_ignoreSsl = map.value(Integration::KEY_DATA_SSL_IGNORE).toBool();
+            m_url = QString(m_ssl ? "wss://" : "ws://").append(m_ip).append("/api/websocket");
         }
     }
 
@@ -112,7 +112,7 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
     }
 
     QString type = map.value("type").toString();
-    int     id   = map.value("id").toInt();
+    int     id = map.value("id").toInt();
 
     if (type == "auth_required") {
         QString auth = QString("{ \"type\": \"auth\", \"access_token\": \"%1\" }\n").arg(m_token);
@@ -184,7 +184,7 @@ void HomeAssistant::onTextMessageReceived(const QString &message) {
 
     // FIXME magic number!
     if (type == "event" && id == 3) {
-        QVariantMap data     = map.value("event").toMap().value("data").toMap();
+        QVariantMap data = map.value("event").toMap().value("data").toMap();
         QVariantMap newState = data.value("new_state").toMap();
         updateEntity(data.value("entity_id").toString(), newState);
     }
@@ -287,12 +287,14 @@ void HomeAssistant::webSocketSendCommand(const QString &domain, const QString &s
         data->insert("entity_id", QVariant(entityId));
         map.insert("service_data", *data);
     }
-    QJsonDocument doc     = QJsonDocument::fromVariant(map);
+    QJsonDocument doc = QJsonDocument::fromVariant(map);
     QString       message = doc.toJson(QJsonDocument::JsonFormat::Compact);
     m_webSocket->sendTextMessage(message);
 }
 
-int HomeAssistant::convertBrightnessToPercentage(float value) { return static_cast<int>(round(value / 255 * 100)); }
+int HomeAssistant::convertBrightnessToPercentage(float value) {
+    return static_cast<int>(round(value / 255 * 100));
+}
 
 void HomeAssistant::updateEntity(const QString &entity_id, const QVariantMap &attr) {
     EntityInterface *entity = m_entities->getEntityInterface(entity_id);
@@ -401,7 +403,7 @@ void HomeAssistant::updateMediaPlayer(EntityInterface *entity, const QVariantMap
 
     // media image
     if (entity->isSupported(MediaPlayerDef::F_MEDIA_IMAGE) && haAttr.contains("entity_picture")) {
-        QString url     = haAttr.value("entity_picture").toString();
+        QString url = haAttr.value("entity_picture").toString();
         QString fullUrl = "";
         if (url.contains("http")) {
             fullUrl = url;
@@ -510,7 +512,9 @@ void HomeAssistant::enterStandby() {
     m_heartbeatTimeoutTimer->stop();
 }
 
-void HomeAssistant::leaveStandby() { m_heartbeatTimer->start(); }
+void HomeAssistant::leaveStandby() {
+    m_heartbeatTimer->start();
+}
 
 void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, int command, const QVariant &param) {
     if (type == "light") {
@@ -590,12 +594,12 @@ void HomeAssistant::sendCommand(const QString &type, const QString &entity_id, i
     } else if (type == "remote") {
         EntityInterface *entity = m_entities->getEntityInterface(entity_id);
         RemoteInterface *remoteInterface = static_cast<RemoteInterface *>(entity->getSpecificInterface());
-        QVariantList commands = remoteInterface->commands();
-        QStringList remoteCodes = findRemoteCodes(entity->getCommandName(command), commands);
-        QString remoteDevice = findRemoteDevice(entity->getCommandName(command), commands);
+        QVariantList     commands = remoteInterface->commands();
+        QStringList      remoteCodes = findRemoteCodes(entity->getCommandName(command), commands);
+        QString          remoteDevice = findRemoteDevice(entity->getCommandName(command), commands);
 
         if (remoteCodes.length() > 0) {
-            QVariantMap data;
+            QVariantMap   data;
             const QString ha_entity_id = entity_id.left(entity_id.indexOf('+'));
 
             if (remoteDevice.length() > 0) {
