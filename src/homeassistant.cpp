@@ -37,7 +37,7 @@
 #include "yio-interface/entities/remoteinterface.h"
 #include "yio-interface/entities/switchinterface.h"
 
-HomeAssistantPlugin::HomeAssistantPlugin() : Plugin("yio.dock.homeassistant", USE_WORKER_THREAD) {}
+HomeAssistantPlugin::HomeAssistantPlugin() : Plugin("yio.plugin.homeassistant", USE_WORKER_THREAD) {}
 
 Integration *HomeAssistantPlugin::createIntegration(const QVariantMap &config, EntitiesInterface *entities,
                                                     NotificationsInterface *notifications, YioAPIInterface *api,
