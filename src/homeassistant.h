@@ -76,7 +76,7 @@ class HomeAssistant : public Integration {
 
     void sendCommand(const QString& type, const QString& entityId, int command, const QVariant& param) override;
 
- public slots:  // NOLINT open issue: https://github.com/cpplint/cpplint/pull/99
+ public slots:
     void connect() override;
     void disconnect() override;
     void enterStandby() override;
