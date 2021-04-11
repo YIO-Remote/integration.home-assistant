@@ -16,7 +16,7 @@
         \"version_string\": \"$$QMAKE_HOST.version_string\"
     }
   },
-  \"copyright\" : \"(C) 2019-2020 Contributors of integration.homeassistant\",
+  \"copyright\" : \"(C) 2019-2021 Contributors of integration.homeassistant\",
   \"license\" : [
       \"YIO-Remote software is free software: you can redistribute it and/or modify\",
       \"it under the terms of the GNU General Public License as published by\",
@@ -29,10 +29,11 @@
       \"Home Assistant Integration for YIO\"
   ],
   \"url\": \"https://github.com/YIO-Remote/integration.home-assistant\",
-  \"dependencies\" : [
-      { \"name\" : \"app\", \"version\" : \"0.5.0\" },
-      { \"name\" : \"remoteOS\", \"version\" : \"0.4.0\" }
-  ],
+  \"dependencies\" : {
+      \"app\" : \"0.8.0\",
+      \"remote-os\" : \"0.4.0\",
+      \"integrations.library\" : \"$$INTG_GIT_VERSION\"
+  },
   \"mdns\": \"_home-assistant._tcp\",
   \"setup_data\": $$CFG_SCHEMA
 }
